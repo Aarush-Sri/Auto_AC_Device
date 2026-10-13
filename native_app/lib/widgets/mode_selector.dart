@@ -52,12 +52,12 @@ class ModeSelector extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected && isPowerOn
-                      ? color.withValues(alpha: 0.15)
+                      ? color.withOpacity(0.15)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected && isPowerOn
-                        ? color.withValues(alpha: 0.4)
+                        ? color.withOpacity(0.4)
                         : Colors.transparent,
                   ),
                 ),

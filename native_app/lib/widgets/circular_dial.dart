@@ -79,7 +79,7 @@ class _CircularDialState extends State<CircularDial> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AuraTheme.primary.withValues(alpha: 0.12),
+                              color: AuraTheme.primary.withOpacity(0.12),
                               blurRadius: 40,
                               spreadRadius: 10,
                             ),
@@ -226,7 +226,7 @@ class _StepButton extends StatelessWidget {
           color: enabled ? AuraTheme.cardSurface : AuraTheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: enabled ? AuraTheme.border : AuraTheme.border.withValues(alpha: 0.4),
+            color: enabled ? AuraTheme.border : AuraTheme.border.withOpacity(0.4),
           ),
         ),
         child: Center(
@@ -262,7 +262,7 @@ class _DialPainter extends CustomPainter {
 
     // 1. Background Arc Track
     final trackPaint = Paint()
-      ..color = AuraTheme.border.withValues(alpha: 0.6)
+      ..color = AuraTheme.border.withOpacity(0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;

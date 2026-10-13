@@ -23,7 +23,7 @@ class AuraHeader extends StatelessWidget {
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AuraTheme.surface.withValues(alpha: 0.85),
+        color: AuraTheme.surface.withOpacity(0.85),
         border: const Border(
           bottom: BorderSide(color: AuraTheme.border, width: 1),
         ),
@@ -42,7 +42,7 @@ class AuraHeader extends StatelessWidget {
                     color: AuraTheme.cardSurface,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: AuraTheme.primary.withValues(alpha: 0.3),
+                      color: AuraTheme.primary.withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -119,13 +119,13 @@ class AuraHeader extends StatelessWidget {
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: isPowerOn
-                            ? AuraTheme.primary.withValues(alpha: 0.4)
+                            ? AuraTheme.primary.withOpacity(0.4)
                             : AuraTheme.border,
                       ),
                       boxShadow: isPowerOn
                           ? [
                               BoxShadow(
-                                color: AuraTheme.primary.withValues(alpha: 0.18),
+                                color: AuraTheme.primary.withOpacity(0.18),
                                 blurRadius: 12,
                                 spreadRadius: 1,
                               ),
@@ -224,14 +224,14 @@ class _BleStatusPill extends StatelessWidget {
     String label;
 
     if (isConnected) {
-      bg = AuraTheme.primary.withValues(alpha: 0.12);
-      borderColor = AuraTheme.primary.withValues(alpha: 0.4);
+      bg = AuraTheme.primary.withOpacity(0.12);
+      borderColor = AuraTheme.primary.withOpacity(0.4);
       textColor = AuraTheme.primary;
       icon = const Icon(LucideIcons.bluetooth_connected, size: 14, color: AuraTheme.primary);
       label = status.deviceName ?? '903-AC-V2';
     } else if (isConnecting) {
       bg = AuraTheme.cardSurfaceElevated;
-      borderColor = AuraTheme.warning.withValues(alpha: 0.4);
+      borderColor = AuraTheme.warning.withOpacity(0.4);
       textColor = AuraTheme.warning;
       icon = const SizedBox(
         width: 12,

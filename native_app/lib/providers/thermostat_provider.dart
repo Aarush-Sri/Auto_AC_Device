@@ -9,8 +9,8 @@ import '../services/ble_service.dart';
 class ThermostatProvider extends ChangeNotifier {
   final BleService _bleService = BleService.instance;
 
-  late StreamSubscription _statusSub;
-  late StreamSubscription _tempSub;
+  StreamSubscription? _statusSub;
+  StreamSubscription? _tempSub;
 
   List<ClimateZone> _zones = [
     const ClimateZone(
@@ -321,8 +321,8 @@ class ThermostatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _statusSub.cancel();
-    _tempSub.cancel();
+    _statusSub?.cancel();
+    _tempSub?.cancel();
     super.dispose();
   }
 }

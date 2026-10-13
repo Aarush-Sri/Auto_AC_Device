@@ -90,7 +90,7 @@ class ServoControls extends StatelessWidget {
                     activeTrackColor: AuraTheme.primary,
                     inactiveTrackColor: AuraTheme.border,
                     thumbColor: AuraTheme.primary,
-                    overlayColor: AuraTheme.primary.withValues(alpha: 0.15),
+                    overlayColor: AuraTheme.primary.withOpacity(0.15),
                     trackHeight: 4,
                   ),
                   child: Slider(
@@ -140,10 +140,10 @@ class ServoControls extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isMatch ? AuraTheme.primary.withValues(alpha: 0.12) : AuraTheme.surface,
+                    color: isMatch ? AuraTheme.primary.withOpacity(0.12) : AuraTheme.surface,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isMatch ? AuraTheme.primary.withValues(alpha: 0.4) : AuraTheme.border,
+                      color: isMatch ? AuraTheme.primary.withOpacity(0.4) : AuraTheme.border,
                     ),
                   ),
                   child: Text(

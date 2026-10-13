@@ -46,7 +46,7 @@ class AuraTheme {
       ),
       fontFamily: 'Inter',
       useMaterial3: true,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
