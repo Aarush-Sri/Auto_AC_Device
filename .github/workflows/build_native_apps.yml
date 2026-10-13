@@ -41,6 +41,28 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Precache iOS Artifacts
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter precache --ios
+
+      - name: Ensure iOS Ephemeral Package Exists
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: |
+          mkdir -p ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Sources/FlutterGeneratedPluginSwiftPackage
+          if [ ! -f "ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift" ]; then
+            cat << 'EOF' > ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+          // swift-tools-version: 5.9
+          import PackageDescription
+          let package = Package(
+              name: "FlutterGeneratedPluginSwiftPackage",
+              platforms: [.iOS("15.0")],
+              products: [.library(name: "FlutterGeneratedPluginSwiftPackage", type: .static, targets: ["FlutterGeneratedPluginSwiftPackage"])],
+              targets: [.target(name: "FlutterGeneratedPluginSwiftPackage")]
+          )
+          EOF
+            touch ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Sources/FlutterGeneratedPluginSwiftPackage/FlutterGeneratedPluginSwiftPackage.swift
+          fi
+
       - name: Install Dependencies
         working-directory: ${{ steps.flutter_project.outputs.path }}
         run: flutter pub get

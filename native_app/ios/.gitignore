@@ -19,8 +19,11 @@ Flutter/App.framework
 Flutter/Flutter.framework
 Flutter/Flutter.podspec
 Flutter/Generated.xcconfig
-Flutter/ephemeral/
 Flutter/app.flx
+Flutter/ephemeral/*
+!Flutter/ephemeral/Packages
+!Flutter/ephemeral/Packages/**
+
 Flutter/app.zip
 Flutter/flutter_assets/
 Flutter/flutter_export_environment.sh
