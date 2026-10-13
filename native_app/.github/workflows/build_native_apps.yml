@@ -1,0 +1,184 @@
+name: Build Native Apps (iOS, Android, Windows)
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  # =============================================================
+  # 1. iOS Build (macOS-14 Runner)
+  # =============================================================
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Locate Flutter Project
+        id: flutter_project
+        shell: bash
+        run: |
+          if [ -f "Dashboard/native_app/pubspec.yaml" ]; then
+            echo "path=Dashboard/native_app" >> $GITHUB_OUTPUT
+          elif [ -f "dashboard/native_app/pubspec.yaml" ]; then
+            echo "path=dashboard/native_app" >> $GITHUB_OUTPUT
+          elif [ -f "native_app/pubspec.yaml" ]; then
+            echo "path=native_app" >> $GITHUB_OUTPUT
+          elif [ -f "pubspec.yaml" ]; then
+            echo "path=." >> $GITHUB_OUTPUT
+          else
+            echo "::error::Could not find pubspec.yaml"
+            exit 1
+          fi
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter pub get
+
+      - name: Run Dart Unit Tests
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter test
+
+      - name: Build iOS (No Codesign)
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter build ios --release --no-codesign
+
+      - name: Package into Sideloadable IPA
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r AuraClimate.ipa Payload
+
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AuraClimate-iOS-IPA
+          path: ${{ steps.flutter_project.outputs.path }}/AuraClimate.ipa
+          retention-days: 14
+
+  # =============================================================
+  # 2. Android APK Build (Ubuntu Runner)
+  # =============================================================
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Locate Flutter Project
+        id: flutter_project
+        shell: bash
+        run: |
+          if [ -f "Dashboard/native_app/pubspec.yaml" ]; then
+            echo "path=Dashboard/native_app" >> $GITHUB_OUTPUT
+          elif [ -f "dashboard/native_app/pubspec.yaml" ]; then
+            echo "path=dashboard/native_app" >> $GITHUB_OUTPUT
+          elif [ -f "native_app/pubspec.yaml" ]; then
+            echo "path=native_app" >> $GITHUB_OUTPUT
+          elif [ -f "pubspec.yaml" ]; then
+            echo "path=." >> $GITHUB_OUTPUT
+          else
+            echo "::error::Could not find pubspec.yaml"
+            exit 1
+          fi
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter pub get
+
+      - name: Run Dart Unit Tests
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter test
+
+      - name: Build Release APK
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter build apk --release
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AuraClimate-Android-APK
+          path: ${{ steps.flutter_project.outputs.path }}/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+  # =============================================================
+  # 3. Windows Desktop Build (Windows-latest Runner)
+  # =============================================================
+  build-windows:
+    name: Build Windows Desktop
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Locate Flutter Project
+        id: flutter_project
+        shell: bash
+        run: |
+          if [ -f "Dashboard/native_app/pubspec.yaml" ]; then
+            echo "path=Dashboard/native_app" >> $GITHUB_OUTPUT
+          elif [ -f "dashboard/native_app/pubspec.yaml" ]; then
+            echo "path=dashboard/native_app" >> $GITHUB_OUTPUT
+          elif [ -f "native_app/pubspec.yaml" ]; then
+            echo "path=native_app" >> $GITHUB_OUTPUT
+          elif [ -f "pubspec.yaml" ]; then
+            echo "path=." >> $GITHUB_OUTPUT
+          else
+            echo "::error::Could not find pubspec.yaml"
+            exit 1
+          fi
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter pub get
+
+      - name: Run Dart Unit Tests
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter test
+
+      - name: Build Windows Desktop Release
+        working-directory: ${{ steps.flutter_project.outputs.path }}
+        run: flutter build windows --release
+
+      - name: Upload Windows Executable Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AuraClimate-Windows-Release
+          path: ${{ steps.flutter_project.outputs.path }}/build/windows/x64/runner/Release/
+          retention-days: 14
