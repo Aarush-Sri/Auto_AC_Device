@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #0b1326;
+    color: #dae2fd;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  }
+}
+
+/* Custom Glassmorphism & Thermal Glows */
+.glass-panel {
+  background: rgba(23, 31, 51, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-panel-elevated {
+  background: rgba(34, 42, 61, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glow-cyan {
+  filter: drop-shadow(0 0 12px rgba(76, 215, 246, 0.75)) drop-shadow(0 0 24px rgba(6, 182, 212, 0.45));
+}
+
+.glow-amber {
+  filter: drop-shadow(0 0 12px rgba(255, 185, 95, 0.75)) drop-shadow(0 0 24px rgba(238, 152, 0, 0.45));
+}
+
+/* Hide scrollbars for clean HUD look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b1326;
+}
+::-webkit-scrollbar-thumb {
+  background: #222a3d;
+  border-radius: 9999px;
+}
