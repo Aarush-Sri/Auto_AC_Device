@@ -14,14 +14,7 @@ function TestConsumer() {
     setMode,
     toggleUnit,
     unit,
-    formatTemp,
-    servoPosition,
-    servoStep,
-    setServoStep,
-    incrementServoPosition,
-    decrementServoPosition,
-    setServoPosition,
-    resetServoPosition
+    formatTemp
   } = useThermostat();
 
   return (
@@ -31,8 +24,6 @@ function TestConsumer() {
       <span data-testid="setpoint">{formatTemp(activeZone.setpoint)}</span>
       <span data-testid="mode">{activeZone.mode}</span>
       <span data-testid="unit">{unit}</span>
-      <span data-testid="servo-position">{servoPosition}</span>
-      <span data-testid="servo-step">{servoStep}</span>
 
       <button onClick={() => adjustSetpoint(1)}>Increase</button>
       <button onClick={() => adjustSetpoint(-1)}>Decrease</button>
@@ -40,12 +31,6 @@ function TestConsumer() {
       <button onClick={togglePower}>Power</button>
       <button onClick={() => setMode('heat')}>HeatMode</button>
       <button onClick={toggleUnit}>ToggleUnit</button>
-      <button onClick={() => incrementServoPosition()}>IncrementServo</button>
-      <button onClick={() => incrementServoPosition(15)}>IncrementServo15</button>
-      <button onClick={() => decrementServoPosition()}>DecrementServo</button>
-      <button onClick={() => setServoPosition(90)}>SetServo90</button>
-      <button onClick={() => resetServoPosition()}>ResetServo</button>
-      <button onClick={() => setServoStep(5)}>SetStep5</button>
     </div>
   );
 }
@@ -62,7 +47,6 @@ describe('ThermostatContext', () => {
     expect(screen.getByTestId('setpoint').textContent).toBe('70');
     expect(screen.getByTestId('mode').textContent).toBe('cool');
     expect(screen.getByTestId('unit').textContent).toBe('F');
-    expect(screen.getByTestId('servo-position').textContent).toBe('0');
   });
 
   it('adjusts setpoint up and down', async () => {
@@ -153,7 +137,7 @@ describe('ThermostatContext', () => {
     spy.mockRestore();
   });
 
-  it('transmits on/off servo command to BLE when power is toggled', async () => {
+  it('transmits on/off command to BLE when power is toggled', async () => {
     const spy = vi.spyOn(bleService, 'writeServo').mockResolvedValue({ success: true, command: 'off' });
     bleService.isConnected = true;
 
@@ -168,45 +152,6 @@ describe('ThermostatContext', () => {
     await user.click(powerBtn);
 
     expect(spy).toHaveBeenCalledWith('off');
-    spy.mockRestore();
-  });
-
-  it('increments, decrements, and sets servo position transmitting to BLE', async () => {
-    const spy = vi.spyOn(bleService, 'writeServoPosition').mockResolvedValue({ success: true, position: 10, hex: '31 30' });
-    bleService.isConnected = true;
-
-    const user = userEvent.setup();
-    render(
-      <ThermostatProvider>
-        <TestConsumer />
-      </ThermostatProvider>
-    );
-
-    const incBtn = screen.getByText('IncrementServo');
-    await user.click(incBtn);
-    expect(screen.getByTestId('servo-position').textContent).toBe('10');
-    expect(spy).toHaveBeenCalledWith(10);
-
-    const inc15Btn = screen.getByText('IncrementServo15');
-    await user.click(inc15Btn);
-    expect(screen.getByTestId('servo-position').textContent).toBe('25');
-    expect(spy).toHaveBeenCalledWith(25);
-
-    const set90Btn = screen.getByText('SetServo90');
-    await user.click(set90Btn);
-    expect(screen.getByTestId('servo-position').textContent).toBe('90');
-    expect(spy).toHaveBeenCalledWith(90);
-
-    const decBtn = screen.getByText('DecrementServo');
-    await user.click(decBtn);
-    expect(screen.getByTestId('servo-position').textContent).toBe('80');
-    expect(spy).toHaveBeenCalledWith(80);
-
-    const resetBtn = screen.getByText('ResetServo');
-    await user.click(resetBtn);
-    expect(screen.getByTestId('servo-position').textContent).toBe('0');
-    expect(spy).toHaveBeenCalledWith(0);
-
     spy.mockRestore();
   });
 });

@@ -6,7 +6,6 @@ import 'providers/thermostat_provider.dart';
 import 'widgets/aura_header.dart';
 import 'widgets/circular_dial.dart';
 import 'widgets/mode_selector.dart';
-import 'widgets/servo_controls.dart';
 import 'widgets/settings_drawer.dart';
 
 void main() {
@@ -66,26 +65,22 @@ class _MainThermostatScreenState extends State<MainThermostatScreen> {
           // Main Viewport
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               physics: const BouncingScrollPhysics(),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
+                  constraints: const BoxConstraints(maxWidth: 420),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Circular Dial
                       CircularDial(),
-                      SizedBox(height: 20),
+                      SizedBox(height: 16),
 
                       // Essential Mode Selector
                       ModeSelector(),
-                      SizedBox(height: 20),
-
-                      // Vent Servo Actuator Card
-                      ServoControls(),
-                      SizedBox(height: 24),
+                      SizedBox(height: 16),
                     ],
                   ),
                 ),

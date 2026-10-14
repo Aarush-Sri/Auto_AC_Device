@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:provider/provider.dart';
 import '../constants/aura_theme.dart';
 import '../models/ble_log_entry.dart';
 import '../providers/thermostat_provider.dart';
+import 'ble_scanner_sheet.dart';
 
 class SettingsDrawer extends StatelessWidget {
   const SettingsDrawer({super.key});
@@ -16,7 +18,7 @@ class SettingsDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: AuraTheme.surface,
       surfaceTintColor: Colors.transparent,
-      width: 380,
+      width: math.min(MediaQuery.of(context).size.width * 0.86, 360.0),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,6 +105,31 @@ class SettingsDrawer extends StatelessWidget {
                         const _InfoRow(
                           label: 'Service UUID',
                           value: '...9000',
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              side: BorderSide(color: AuraTheme.primary.withOpacity(0.4)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(LucideIcons.bluetooth_searching, size: 16, color: AuraTheme.primary),
+                            label: const Text(
+                              'Scan & Pair Devices',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AuraTheme.primary,
+                              ),
+                            ),
+                            onPressed: () {
+                              BleScannerSheet.show(context);
+                            },
+                          ),
                         ),
                       ],
                     ),

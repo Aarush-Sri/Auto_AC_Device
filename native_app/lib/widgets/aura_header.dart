@@ -5,6 +5,8 @@ import '../constants/aura_theme.dart';
 import '../providers/thermostat_provider.dart';
 import '../services/ble_service.dart';
 
+import 'ble_scanner_sheet.dart';
+
 class AuraHeader extends StatelessWidget {
   final VoidCallback onOpenSettings;
 
@@ -20,82 +22,97 @@ class AuraHeader extends StatelessWidget {
     final isPowerOn = thermostat.activeZone.power;
 
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AuraTheme.surface.withOpacity(0.85),
+        color: AuraTheme.surface.withOpacity(0.95),
         border: const Border(
           bottom: BorderSide(color: AuraTheme.border, width: 1),
         ),
       ),
       child: SafeArea(
         bottom: false,
-        child: Row(
-          children: [
-            // Brand Logo & Title
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AuraTheme.cardSurface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AuraTheme.primary.withOpacity(0.3),
-                      width: 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Brand Logo & Title
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AuraTheme.cardSurface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AuraTheme.primary.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          LucideIcons.wind,
+                          color: AuraTheme.primary,
+                          size: 18,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      LucideIcons.wind,
-                      color: AuraTheme.primary,
-                      size: 20,
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Aura Climate',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AuraTheme.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            thermostat.activeZone.name,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AuraTheme.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Right Controls Cluster (Compact for mobile)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // BLE Status Button
+                  _BleButton(
+                    status: bleStatus,
+                    onTap: () {
+                      BleScannerSheet.show(context);
+                    },
                   ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'Aura Climate',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AuraTheme.textPrimary,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
 
-            const Spacer(),
-
-            // Right Controls
-            Row(
-              children: [
-                // BLE Connection Pill
-                _BleStatusPill(
-                  status: bleStatus,
-                  onTap: () {
-                    if (bleStatus.isConnected) {
-                      thermostat.disconnectBle();
-                    } else {
-                      thermostat.connectBle();
-                    }
-                  },
-                ),
-                const SizedBox(width: 8),
-
-                // Temperature Unit Toggle
-                InkWell(
-                  onTap: thermostat.toggleUnit,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: AuraTheme.cardSurface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AuraTheme.border),
-                    ),
+                  // Temperature Unit Toggle
+                  _HeaderIconButton(
+                    tooltip: 'Switch Temperature Unit (°${thermostat.unit})',
+                    onTap: thermostat.toggleUnit,
                     child: Text(
                       '°${thermostat.unit}',
                       style: const TextStyle(
@@ -105,109 +122,40 @@ class AuraHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
+                  const SizedBox(width: 8),
 
-                // Master Power Button
-                InkWell(
-                  onTap: thermostat.togglePower,
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: isPowerOn ? AuraTheme.cardSurfaceElevated : AuraTheme.cardSurface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isPowerOn
-                            ? AuraTheme.primary.withOpacity(0.4)
-                            : AuraTheme.border,
-                      ),
-                      boxShadow: isPowerOn
-                          ? [
-                              BoxShadow(
-                                color: AuraTheme.primary.withOpacity(0.18),
-                                blurRadius: 12,
-                                spreadRadius: 1,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isPowerOn ? AuraTheme.primary : AuraTheme.textMuted,
-                            boxShadow: isPowerOn
-                                ? [
-                                    const BoxShadow(
-                                      color: AuraTheme.primary,
-                                      blurRadius: 6,
-                                      spreadRadius: 1,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isPowerOn ? 'ON' : 'STANDBY',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: isPowerOn ? AuraTheme.textPrimary : AuraTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(
-                          LucideIcons.power,
-                          size: 14,
-                          color: isPowerOn ? AuraTheme.primary : AuraTheme.textSecondary,
-                        ),
-                      ],
+                  // Master Power Button
+                  _PowerButton(
+                    isOn: isPowerOn,
+                    onTap: thermostat.togglePower,
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Settings Drawer Button
+                  _HeaderIconButton(
+                    tooltip: 'Settings & BLE Telemetry',
+                    onTap: onOpenSettings,
+                    child: const Icon(
+                      LucideIcons.sliders_horizontal,
+                      size: 16,
+                      color: AuraTheme.textSecondary,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-
-                // Settings Drawer Button
-                InkWell(
-                  onTap: onOpenSettings,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AuraTheme.cardSurface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AuraTheme.border),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        LucideIcons.sliders_horizontal,
-                        size: 18,
-                        color: AuraTheme.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _BleStatusPill extends StatelessWidget {
+class _BleButton extends StatelessWidget {
   final BleStatus status;
   final VoidCallback onTap;
 
-  const _BleStatusPill({
+  const _BleButton({
     required this.status,
     required this.onTap,
   });
@@ -219,59 +167,173 @@ class _BleStatusPill extends StatelessWidget {
 
     Color bg;
     Color borderColor;
-    Color textColor;
-    Widget icon;
-    String label;
+    Color iconColor;
 
     if (isConnected) {
       bg = AuraTheme.primary.withOpacity(0.12);
       borderColor = AuraTheme.primary.withOpacity(0.4);
-      textColor = AuraTheme.primary;
-      icon = const Icon(LucideIcons.bluetooth_connected, size: 14, color: AuraTheme.primary);
-      label = status.deviceName ?? '903-AC-V2';
+      iconColor = AuraTheme.primary;
     } else if (isConnecting) {
-      bg = AuraTheme.cardSurfaceElevated;
+      bg = AuraTheme.warning.withOpacity(0.12);
       borderColor = AuraTheme.warning.withOpacity(0.4);
-      textColor = AuraTheme.warning;
-      icon = const SizedBox(
-        width: 12,
-        height: 12,
-        child: CircularProgressIndicator(strokeWidth: 2, color: AuraTheme.warning),
-      );
-      label = status.isAutoReconnecting ? 'Reconnecting...' : 'Pairing...';
+      iconColor = AuraTheme.warning;
     } else {
       bg = AuraTheme.cardSurface;
       borderColor = AuraTheme.border;
-      textColor = AuraTheme.textSecondary;
-      icon = const Icon(LucideIcons.bluetooth, size: 14, color: AuraTheme.textSecondary);
-      label = 'BLE Link';
+      iconColor = AuraTheme.textMuted;
     }
 
-    return InkWell(
-      onTap: isConnecting ? null : onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          children: [
-            icon,
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-          ],
+    final tooltipMsg = isConnected
+        ? 'Connected: ${status.deviceName ?? "903-AC-V2"}'
+        : (isConnecting ? 'Connecting to ESP32...' : 'Bluetooth Disconnected - Tap to Connect');
+
+    return Tooltip(
+      message: tooltipMsg,
+      child: InkWell(
+        onTap: isConnecting ? null : onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderColor),
+            boxShadow: isConnected
+                ? [
+                    BoxShadow(
+                      color: AuraTheme.primary.withOpacity(0.18),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: isConnecting
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AuraTheme.warning,
+                    ),
+                  )
+                : Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        isConnected
+                            ? LucideIcons.bluetooth_connected
+                            : LucideIcons.bluetooth,
+                        size: 16,
+                        color: iconColor,
+                      ),
+                      if (isConnected)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AuraTheme.success,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
+  }
+}
+
+class _PowerButton extends StatelessWidget {
+  final bool isOn;
+  final VoidCallback onTap;
+
+  const _PowerButton({
+    required this.isOn,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: isOn ? 'System ON (Tap for Standby)' : 'System STANDBY (Tap to Power ON)',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isOn
+                ? AuraTheme.primary.withOpacity(0.18)
+                : AuraTheme.cardSurface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isOn
+                  ? AuraTheme.primary.withOpacity(0.5)
+                  : AuraTheme.border,
+            ),
+            boxShadow: isOn
+                ? [
+                    BoxShadow(
+                      color: AuraTheme.primary.withOpacity(0.25),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Icon(
+              LucideIcons.power,
+              size: 16,
+              color: isOn ? AuraTheme.primary : AuraTheme.textMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final Widget child;
+  final String? tooltip;
+
+  const _HeaderIconButton({
+    required this.onTap,
+    required this.child,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final button = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AuraTheme.cardSurface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AuraTheme.border),
+        ),
+        child: Center(child: child),
+      ),
+    );
+
+    if (tooltip != null) {
+      return Tooltip(message: tooltip!, child: button);
+    }
+    return button;
   }
 }

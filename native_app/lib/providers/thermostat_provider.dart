@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_ble/universal_ble.dart' show BleScanResult;
 import '../models/climate_zone.dart';
 import '../models/ble_log_entry.dart';
 import '../services/ble_service.dart';
@@ -101,6 +102,10 @@ class ThermostatProvider extends ChangeNotifier {
       _servoPosition = prefs.getDouble('aura_servo_pos') ?? 0.0;
       _autoConnect = prefs.getBool('aura_autoconnect') ?? true;
       _unit = prefs.getString('aura_unit') ?? 'F';
+      final lastDeviceId = prefs.getString('aura_last_ble_device_id');
+      if (lastDeviceId != null && lastDeviceId.isNotEmpty) {
+        _bleService.setTargetDeviceId(lastDeviceId);
+      }
       _bleService.setAutoReconnectEnabled(_autoConnect);
     } catch (_) {}
 
@@ -288,10 +293,34 @@ class ThermostatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // BLE Connectivity
+  // BLE Connectivity & Scanning
+  List<BleScanResult> get scannedDevices => _bleService.discoveredDevices;
+  bool get isScanning => _bleService.isScanning;
+  Stream<List<BleScanResult>> get scanResultsStream => _bleService.scanResultsStream;
+
   Future<void> connectBle() async {
     addLog('Initiating BLE Scan for ${BleService.instance.currentStatus.deviceName ?? "903-AC-V2"}...', BleLogType.info);
     await _bleService.connect();
+  }
+
+  Future<void> startBleScan() async {
+    addLog('Scanning for nearby BLE climate devices...', BleLogType.info);
+    await _bleService.startScan(autoConnect: false);
+    notifyListeners();
+  }
+
+  Future<void> stopBleScan() async {
+    await _bleService.stopScan();
+    notifyListeners();
+  }
+
+  Future<void> connectToDevice(String deviceId, [String? name]) async {
+    addLog('Connecting to ${name ?? deviceId}...', BleLogType.info);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('aura_last_ble_device_id', deviceId);
+    } catch (_) {}
+    await _bleService.connectToDevice(deviceId, name);
   }
 
   void disconnectBle() {

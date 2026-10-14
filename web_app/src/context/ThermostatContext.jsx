@@ -99,16 +99,6 @@ export function ThermostatProvider({ children }) {
 
   const [bleLogs, setBleLogs] = useState([]);
 
-  // Servo Position State (0° to 180°)
-  const [servoPosition, setServoPositionState] = useState(() => {
-    try {
-      const stored = localStorage.getItem('aura_ble_servo_pos');
-      return stored !== null ? Number(stored) : 0;
-    } catch {
-      return 0;
-    }
-  });
-  const [servoStep, setServoStep] = useState(10);
 
   const addBleLog = useCallback((message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -211,78 +201,20 @@ export function ThermostatProvider({ children }) {
     }
   }, [unit, addBleLog]);
 
-  // Transmit on/off servo command to BLE Characteristic UUID ...0003
+  // Transmit on/off power command to BLE Characteristic UUID ...0003
   const sendPowerToBle = useCallback(async (isPowerOn) => {
     if (!bleService.isConnected && !bleService.isSimulating) return;
     const command = isPowerOn ? 'on' : 'off';
     try {
       const res = await bleService.writeServo(command);
       if (res?.success) {
-        addBleLog(`Sent Servo Power: "${command}" to UUID ...0003`, 'success');
+        addBleLog(`Sent Power: "${command}" to UUID ...0003`, 'success');
       }
     } catch (err) {
-      console.warn('[BLE] Failed to send servo command:', err);
-      addBleLog(`Failed to send servo command "${command}": ${err.message}`, 'error');
+      console.warn('[BLE] Failed to send power command:', err);
+      addBleLog(`Failed to send power command "${command}": ${err.message}`, 'error');
     }
   }, [addBleLog]);
-
-  // Transmit numeric servo position (0°-180°) to BLE Characteristic UUID ...0003
-  const sendServoPositionToBle = useCallback(async (pos) => {
-    if (!bleService.isConnected && !bleService.isSimulating) return;
-    const clamped = Math.min(180, Math.max(0, Math.round(pos)));
-    try {
-      const res = await bleService.writeServoPosition(clamped);
-      if (res?.success) {
-        addBleLog(`Sent Servo Position: ${clamped}° to UUID ...0003 [${res.hex || clamped}]`, 'success');
-      }
-    } catch (err) {
-      console.warn('[BLE] Failed to send servo position:', err);
-      addBleLog(`Failed to send servo position ${clamped}°: ${err.message}`, 'error');
-    }
-  }, [addBleLog]);
-
-  const setServoPosition = useCallback((newPos) => {
-    const clamped = Math.min(180, Math.max(0, Math.round(newPos)));
-    setServoPositionState(clamped);
-    try {
-      localStorage.setItem('aura_ble_servo_pos', String(clamped));
-    } catch {
-      // ignore
-    }
-    sendServoPositionToBle(clamped);
-  }, [sendServoPositionToBle]);
-
-  const incrementServoPosition = useCallback((step = null) => {
-    const delta = typeof step === 'number' ? step : servoStep;
-    setServoPositionState(prev => {
-      const next = Math.min(180, Math.max(0, prev + delta));
-      try {
-        localStorage.setItem('aura_ble_servo_pos', String(next));
-      } catch {
-        // ignore
-      }
-      sendServoPositionToBle(next);
-      return next;
-    });
-  }, [servoStep, sendServoPositionToBle]);
-
-  const decrementServoPosition = useCallback((step = null) => {
-    const delta = typeof step === 'number' ? step : servoStep;
-    setServoPositionState(prev => {
-      const next = Math.min(180, Math.max(0, prev - delta));
-      try {
-        localStorage.setItem('aura_ble_servo_pos', String(next));
-      } catch {
-        // ignore
-      }
-      sendServoPositionToBle(next);
-      return next;
-    });
-  }, [servoStep, sendServoPositionToBle]);
-
-  const resetServoPosition = useCallback(() => {
-    setServoPosition(0);
-  }, [setServoPosition]);
 
   // Attempt auto-connect to permitted 903-AC-V2 device on initial mount
   useEffect(() => {
@@ -464,15 +396,7 @@ export function ThermostatProvider({ children }) {
         startBleSimulation,
         stopBleSimulation,
         sendSetpointToBle,
-        sendPowerToBle,
-        servoPosition,
-        servoStep,
-        setServoStep,
-        incrementServoPosition,
-        decrementServoPosition,
-        setServoPosition,
-        resetServoPosition,
-        sendServoPositionToBle
+        sendPowerToBle
       }}
     >
       {children}

@@ -18,5 +18,6 @@ describe('ClimateControlView Component', () => {
     expect(screen.getByText('Current Temp')).toBeInTheDocument();
     expect(screen.queryByText('Humidity')).not.toBeInTheDocument();
     expect(screen.queryByText(/Blower & Airflow Velocity/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Servo Position Actuator/i)).not.toBeInTheDocument();
   });
 });

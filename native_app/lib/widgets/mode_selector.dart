@@ -22,6 +22,7 @@ class ModeSelector extends StatelessWidget {
     ];
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AuraTheme.cardSurface,
@@ -29,7 +30,6 @@ class ModeSelector extends StatelessWidget {
         border: Border.all(color: AuraTheme.border),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: modes.map((m) {
           final id = m['id'] as String;
           final label = m['label'] as String;
@@ -37,47 +37,51 @@ class ModeSelector extends StatelessWidget {
           final color = m['color'] as Color;
           final isSelected = activeMode == id;
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: InkWell(
-              onTap: isPowerOn
-                  ? () {
-                      HapticFeedback.selectionClick();
-                      thermostat.setMode(id);
-                    }
-                  : null,
-              borderRadius: BorderRadius.circular(12),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected && isPowerOn
-                      ? color.withOpacity(0.15)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: InkWell(
+                onTap: isPowerOn
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        thermostat.setMode(id);
+                      }
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(
                     color: isSelected && isPowerOn
-                        ? color.withOpacity(0.4)
+                        ? color.withOpacity(0.15)
                         : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected && isPowerOn
+                          ? color.withOpacity(0.4)
+                          : Colors.transparent,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      icon,
-                      size: 15,
-                      color: isSelected && isPowerOn ? color : AuraTheme.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected && isPowerOn ? AuraTheme.textPrimary : AuraTheme.textSecondary,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 14,
+                        color: isSelected && isPowerOn ? color : AuraTheme.textSecondary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected && isPowerOn ? AuraTheme.textPrimary : AuraTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

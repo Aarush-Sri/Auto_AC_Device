@@ -1,7 +1,6 @@
 import React from 'react';
 import CircularDial from '../components/CircularDial';
 import ModeSelector from '../components/ModeSelector';
-import ServoControls from '../components/ServoControls';
 import TelemetryCards from '../components/TelemetryCards';
 import { useThermostat } from '../context/ThermostatContext';
 
@@ -72,11 +71,6 @@ export default function ClimateControlView() {
       {/* Mode Selector */}
       <div className="w-full max-w-md z-10 mt-4 mb-4">
         <ModeSelector />
-      </div>
-
-      {/* Servo Position Actuator Controls */}
-      <div className="w-full max-w-md z-10 mb-4">
-        <ServoControls />
       </div>
 
       {/* Telemetry Summary Cards */}

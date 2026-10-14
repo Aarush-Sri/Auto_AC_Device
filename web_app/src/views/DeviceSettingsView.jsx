@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Wifi, Cpu, Sliders, CheckCircle2, RefreshCw, Save, Server, Shield, Bluetooth, BluetoothConnected, BluetoothOff, Activity, Terminal, Radio, Send, Compass } from 'lucide-react';
+import { Wifi, Cpu, Sliders, CheckCircle2, RefreshCw, Save, Server, Shield, Bluetooth, BluetoothConnected, BluetoothOff, Activity, Terminal, Radio, Send } from 'lucide-react';
 import { useThermostat } from '../context/ThermostatContext';
 import { BLE_CONFIG } from '../services/bleService';
-import ServoControls from '../components/ServoControls';
 
 export default function DeviceSettingsView() {
   const {
@@ -22,10 +21,7 @@ export default function DeviceSettingsView() {
     stopBleSimulation,
     sendSetpointToBle,
     activeZone,
-    formatTemp,
-    servoPosition,
-    incrementServoPosition,
-    decrementServoPosition
+    formatTemp
   } = useThermostat();
 
   const [ipInput, setIpInput] = useState(espConfig.ip);
@@ -114,15 +110,6 @@ export default function DeviceSettingsView() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => incrementServoPosition()}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/15 hover:bg-primary/25 text-xs font-mono text-primary border border-primary/30 cursor-pointer"
-                  title="Increment servo actuator on UUID ...0003"
-                >
-                  <Compass className="w-3.5 h-3.5" />
-                  <span>Increment Servo (+10°)</span>
-                </button>
-                <button
-                  type="button"
                   onClick={pollBleTemp}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container-highest hover:bg-surface-bright text-xs font-mono text-primary border border-outline-variant/30 cursor-pointer"
                   title="Trigger manual read from ESP32 characteristic"
@@ -187,7 +174,7 @@ export default function DeviceSettingsView() {
         </div>
 
         {/* Device UUID Details & Live Data */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-outline-variant/20">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-outline-variant/20">
           <div className="p-3 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20">
             <span className="text-[10px] font-mono text-on-surface-variant uppercase block">
               GATT Service UUID
@@ -216,16 +203,6 @@ export default function DeviceSettingsView() {
               {BLE_CONFIG.SETPOINT_CHARACTERISTIC_UUID}
             </span>
             <span className="text-[10px] text-secondary block font-mono mt-0.5">Write / Transmit</span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20">
-            <span className="text-[10px] font-mono text-on-surface-variant uppercase block">
-              Servo Actuator UUID (Out)
-            </span>
-            <span className="text-xs font-mono text-on-surface break-all font-semibold">
-              {BLE_CONFIG.SERVO_CHARACTERISTIC_UUID}
-            </span>
-            <span className="text-[10px] text-primary block font-mono mt-0.5">Pos: {servoPosition}°</span>
           </div>
         </div>
 
@@ -289,10 +266,7 @@ export default function DeviceSettingsView() {
         </div>
       </div>
 
-      {/* 2. Servo Actuator Increment & Control Card */}
-      <ServoControls />
-
-      {/* 3. ESP Server Link Form (Wi-Fi / REST Fallback) */}
+      {/* 2. ESP Server Link Form (Wi-Fi / REST Fallback) */}
       <form onSubmit={handleSave} className="p-6 rounded-2xl bg-surface-container/60 border border-outline-variant/30 backdrop-blur-xl flex flex-col gap-5 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

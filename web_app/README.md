@@ -16,7 +16,7 @@ The web dashboard connects directly from the browser to the ESP32 peripheral ove
 | **Primary Service** | `12345678-1234-1234-1234-123456789000` | Aura AC Service | 128-bit UUID |
 | **Ambient Temp Characteristic** | `12345678-1234-1234-1234-123456789001` | Read / Notify current temperature | 4-byte IEEE-754 Float32 (LE) or ASCII string (e.g. `"24.5"`) |
 | **Target Setpoint Characteristic** | `12345678-1234-1234-1234-123456789002` | Write target temperature setpoint | UTF-8 String (e.g. `"72.0"`) |
-| **Servo Power Characteristic** | `12345678-1234-1234-1234-123456789003` | Write system power toggle | UTF-8 String (`"on"` / `"off"`) |
+| **System Power Characteristic** | `12345678-1234-1234-1234-123456789003` | Write system power toggle | UTF-8 String (`"on"` / `"off"`) |
 
 ---
 

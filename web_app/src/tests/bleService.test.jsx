@@ -109,7 +109,7 @@ describe('BluetoothService Lifecycle and Setpoint Transmission', () => {
     expect(decoded).toBe('74.0');
   });
 
-  it('writes servo command on/off to servo characteristic', async () => {
+  it('writes power command on/off to power characteristic', async () => {
     const mockWriteValue = vi.fn().mockResolvedValue(undefined);
     bleService.isConnected = true;
     bleService.servoCharacteristic = {
@@ -124,24 +124,6 @@ describe('BluetoothService Lifecycle and Setpoint Transmission', () => {
     const bufferSent = mockWriteValue.mock.calls[0][0];
     const decoded = new TextDecoder().decode(bufferSent);
     expect(decoded).toBe('on');
-  });
-
-  it('writes numeric servo position (angle) to servo characteristic and serializes writes', async () => {
-    const mockWriteValue = vi.fn().mockResolvedValue(undefined);
-    bleService.isConnected = true;
-    bleService.servoCharacteristic = {
-      writeValueWithResponse: mockWriteValue
-    };
-
-    const result = await bleService.writeServoPosition(90);
-    expect(result.success).toBe(true);
-    expect(result.position).toBe(90);
-    expect(result.command).toBe('90');
-    expect(mockWriteValue).toHaveBeenCalled();
-
-    const bufferSent = mockWriteValue.mock.calls[0][0];
-    const decoded = new TextDecoder().decode(bufferSent);
-    expect(decoded).toBe('90');
   });
 
   it('attempts tryAutoConnect when navigator.bluetooth.getDevices provides 903-AC-V2', async () => {

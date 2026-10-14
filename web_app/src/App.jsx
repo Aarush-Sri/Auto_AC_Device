@@ -3,7 +3,6 @@ import { ThermostatProvider, useThermostat } from './context/ThermostatContext';
 import Header from './components/Header';
 import CircularDial from './components/CircularDial';
 import ModeSelector from './components/ModeSelector';
-import ServoControls from './components/ServoControls';
 import SettingsDrawer from './components/SettingsDrawer';
 
 function MainThermostatConsole() {
@@ -36,11 +35,6 @@ function MainThermostatConsole() {
           {/* Essential Mode Selector Pills */}
           <div>
             <ModeSelector />
-          </div>
-
-          {/* Servo Position Increment & Control Card */}
-          <div className="w-full max-w-md">
-            <ServoControls />
           </div>
         </div>
       </main>

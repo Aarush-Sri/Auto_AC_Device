@@ -55,7 +55,7 @@ class _CircularDialState extends State<CircularDial> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final dialSize = math.min(constraints.maxWidth, 340.0);
+        final dialSize = math.min(constraints.maxWidth * 0.78, 280.0).clamp(220.0, 300.0);
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -220,11 +220,11 @@ class _StepButton extends StatelessWidget {
       onTap: enabled ? onPressed : null,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 48,
-        height: 48,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: enabled ? AuraTheme.cardSurface : AuraTheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: enabled ? AuraTheme.border : AuraTheme.border.withOpacity(0.4),
           ),
@@ -232,7 +232,7 @@ class _StepButton extends StatelessWidget {
         child: Center(
           child: Icon(
             icon,
-            size: 20,
+            size: 18,
             color: enabled ? AuraTheme.textPrimary : AuraTheme.textMuted,
           ),
         ),

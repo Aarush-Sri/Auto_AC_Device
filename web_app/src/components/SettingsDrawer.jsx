@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { X, Wifi, Sliders, Cpu, Save, CheckCircle2, RefreshCw, Bluetooth, BluetoothConnected, BluetoothOff, Activity, Terminal } from 'lucide-react';
 import { useThermostat } from '../context/ThermostatContext';
 import { BLE_CONFIG } from '../services/bleService';
-import ServoControls from './ServoControls';
 
 export default function SettingsDrawer({ isOpen, onClose }) {
   const {
@@ -151,10 +150,7 @@ export default function SettingsDrawer({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* 2. Servo Actuator & Increment Controls */}
-          <ServoControls compact={false} />
-
-          {/* 3. ESP Wi-Fi Endpoint Config */}
+          {/* 2. ESP Wi-Fi Endpoint Config */}
           <form onSubmit={handleSave} className="p-4 rounded-xl bg-surface-container/70 border border-outline-variant/30 flex flex-col gap-3">
             <div className="flex items-center gap-2 text-on-surface-variant text-xs font-bold uppercase font-mono">
               <Wifi className="w-4 h-4 text-primary" />

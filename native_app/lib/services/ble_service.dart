@@ -53,6 +53,21 @@ class BleService {
   String? _pendingServo;
   bool _autoReconnectEnabled = true;
 
+  final _scanResultsController = StreamController<List<BleScanResult>>.broadcast();
+  Stream<List<BleScanResult>> get scanResultsStream => _scanResultsController.stream;
+
+  final Map<String, BleScanResult> _discoveredDevicesMap = {};
+  List<BleScanResult> get discoveredDevices => _discoveredDevicesMap.values.toList();
+
+  bool _isScanning = false;
+  bool get isScanning => _isScanning;
+  Timer? _scanTimer;
+
+  String _activeServiceUuid = BleConstants.serviceUuid;
+  String _activeTempCharUuid = BleConstants.tempCharacteristicUuid;
+  String _activeSetpointCharUuid = BleConstants.setpointCharacteristicUuid;
+  String _activeServoCharUuid = BleConstants.servoCharacteristicUuid;
+
   void init() {
     UniversalBle.onConnectionChanged = (deviceId, state) {
       final isConnected = state == BleConnectionState.connected;
@@ -65,9 +80,9 @@ class BleService {
     };
 
     UniversalBle.onValueChanged = (deviceId, characteristicId, value) {
-      final charLower = characteristicId.toLowerCase();
-      if (charLower == BleConstants.tempCharacteristicUuid.toLowerCase() ||
-          charLower.contains('9001')) {
+      final charNorm = characteristicId.toLowerCase().replaceAll('-', '');
+      final tempNorm = BleConstants.tempCharacteristicUuid.toLowerCase().replaceAll('-', '');
+      if (charNorm == tempNorm || charNorm.contains('9001')) {
         final parsed = parseTemperature(value);
         if (parsed != null) {
           debugPrint('[BLE] Temperature notification received: $parsed°');
@@ -83,6 +98,10 @@ class BleService {
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
     }
+  }
+
+  void setTargetDeviceId(String id) {
+    _targetDeviceId = id;
   }
 
   /// Parses raw byte payload into a temperature float.
@@ -136,103 +155,155 @@ class BleService {
     return null;
   }
 
-  Future<void> connect() async {
+  /// Initiates scanning with live discovered device streaming.
+  /// If [autoConnect] is true, will auto-connect upon finding a matching peripheral.
+  Future<void> startScan({
+    Duration timeout = const Duration(seconds: 12),
+    bool autoConnect = false,
+  }) async {
     _stopSimulation();
     _userExplicitDisconnect = false;
-    _emitStatus(isConnecting: true, error: null);
+    _isScanning = true;
+    _discoveredDevicesMap.clear();
+    _scanResultsController.add([]);
 
-    try {
-      final availability = await UniversalBle.getBluetoothAvailabilityState();
-      if (availability != AvailabilityState.poweredOn) {
-        _emitStatus(
-          isConnecting: false,
-          error: 'Bluetooth is turned off or not available',
-        );
-        return;
-      }
-
-      final completer = Completer<BleScanResult?>();
-
-      // Web Bluetooth requires GATT service UUIDs to be explicitly declared
-      // in optionalServices during requestDevice. If omitted, Chrome throws a
-      // SecurityError ("Tried getting blocklisted UUID / origin not allowed")
-      // when discovering or accessing GATT services.
-      WebRequestOptionsBuilder? webOptions;
-      if (kIsWeb) {
-        webOptions = WebRequestOptionsBuilder.acceptAllDevices(
-          optionalServices: [
-            BleConstants.serviceUuid.toLowerCase(),
-          ],
-        );
-      }
-
-      UniversalBle.onScanResult = (result) {
-        if (kIsWeb) {
-          // On Web, the browser displays its native device picker modal.
-          // Any device selected by the user is the intended device.
-          UniversalBle.onScanResult = null;
-          UniversalBle.stopScan();
-          if (!completer.isCompleted) completer.complete(result);
-          return;
-        }
-
-        final name = (result.name ?? '').toUpperCase();
-        if (name == BleConstants.deviceName ||
-            name.contains('903-AC') ||
-            name.contains('903')) {
-          UniversalBle.onScanResult = null;
-          UniversalBle.stopScan();
-          if (!completer.isCompleted) completer.complete(result);
+    var availability = await UniversalBle.getBluetoothAvailabilityState();
+    if (availability == AvailabilityState.unknown) {
+      final completer = Completer<AvailabilityState>();
+      UniversalBle.onAvailabilityChange = (state) {
+        if (!completer.isCompleted && state != AvailabilityState.unknown) {
+          completer.complete(state);
         }
       };
+      try {
+        availability = await completer.future.timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
 
-      await UniversalBle.startScan(webRequestOptions: webOptions);
-
-      // Scan timeout 10s
-      Timer(const Duration(seconds: 10), () {
-        if (!completer.isCompleted) {
-          UniversalBle.onScanResult = null;
-          UniversalBle.stopScan();
-          completer.complete(null);
-        }
-      });
-
-      final target = await completer.future;
-      if (target == null) {
-        _emitStatus(
-          isConnecting: false,
-          error: 'Could not find ${BleConstants.deviceName} nearby',
-        );
-        return;
-      }
-
-      await _connectToDevice(target.deviceId, target.name ?? BleConstants.deviceName);
-    } catch (e) {
+    if (availability != AvailabilityState.poweredOn) {
+      _isScanning = false;
       _emitStatus(
         isConnecting: false,
-        error: 'Scan/Connect error: $e',
+        error: 'Bluetooth is off or not permitted. Check Bluetooth and Location settings.',
+      );
+      return;
+    }
+
+    _emitStatus(isConnecting: true, error: null);
+
+    WebRequestOptionsBuilder? webOptions;
+    if (kIsWeb) {
+      webOptions = WebRequestOptionsBuilder.acceptAllDevices(
+        optionalServices: [BleConstants.serviceUuid.toLowerCase()],
       );
     }
+
+    UniversalBle.onScanResult = (result) {
+      _discoveredDevicesMap[result.deviceId] = result;
+      _scanResultsController.add(discoveredDevices);
+
+      if (autoConnect) {
+        final name = (result.name ?? '').toUpperCase();
+        final isMatch = name == BleConstants.deviceName ||
+            name.contains('903-AC') ||
+            name.contains('903') ||
+            name.contains('ESP32') ||
+            (result.deviceId == _targetDeviceId && _targetDeviceId != null);
+
+        if (isMatch) {
+          stopScan();
+          connectToDevice(result.deviceId, result.name ?? BleConstants.deviceName);
+        }
+      }
+    };
+
+    try {
+      await UniversalBle.startScan(webRequestOptions: webOptions);
+    } catch (e) {
+      _isScanning = false;
+      _emitStatus(isConnecting: false, error: 'Scan error: $e');
+      return;
+    }
+
+    _scanTimer?.cancel();
+    _scanTimer = Timer(timeout, () {
+      if (_isScanning) {
+        stopScan();
+        if (autoConnect && !_currentStatus.isConnected && !_currentStatus.isConnecting) {
+          _emitStatus(
+            isConnecting: false,
+            error: 'Could not find ${BleConstants.deviceName} nearby. Tap to scan devices.',
+          );
+        }
+      }
+    });
   }
 
-  Future<void> _connectToDevice(String deviceId, String name) async {
-    _targetDeviceId = deviceId;
+  Future<void> stopScan() async {
+    _isScanning = false;
+    _scanTimer?.cancel();
+    _scanTimer = null;
+    UniversalBle.onScanResult = null;
     try {
-      _emitStatus(isConnecting: true, deviceId: deviceId, error: null);
+      await UniversalBle.stopScan();
+    } catch (_) {}
+  }
+
+  /// Connect using automatic scan match
+  Future<void> connect() async {
+    await startScan(autoConnect: true);
+  }
+
+  /// Connects directly to a specific BLE device by ID (MAC or UUID).
+  Future<void> connectToDevice(String deviceId, [String? name]) async {
+    await stopScan();
+    _targetDeviceId = deviceId;
+    final displayName = name ?? BleConstants.deviceName;
+
+    try {
+      _emitStatus(
+        isConnecting: true,
+        deviceId: deviceId,
+        deviceName: displayName,
+        error: null,
+      );
+
       await UniversalBle.connect(deviceId);
       _connectedDeviceId = deviceId;
       _reconnectAttempts = 0;
+
+      // Allow 350ms for platform GATT connection state to stabilize
+      await Future.delayed(const Duration(milliseconds: 350));
 
       // Discover GATT services
       final services = await UniversalBle.discoverServices(deviceId);
       debugPrint('[BLE] Discovered ${services.length} services on $deviceId');
 
+      // Resolve exact service & characteristic UUIDs
+      for (final s in services) {
+        if (_matchesUuid(s.uuid, BleConstants.serviceUuid)) {
+          _activeServiceUuid = s.uuid;
+          if (s.characteristics != null) {
+            for (final c in s.characteristics!) {
+              if (_matchesUuid(c.uuid, BleConstants.tempCharacteristicUuid)) {
+                _activeTempCharUuid = c.uuid;
+              } else if (_matchesUuid(c.uuid, BleConstants.setpointCharacteristicUuid)) {
+                _activeSetpointCharUuid = c.uuid;
+              } else if (_matchesUuid(c.uuid, BleConstants.servoCharacteristicUuid)) {
+                _activeServoCharUuid = c.uuid;
+              }
+            }
+          }
+          break;
+        }
+      }
+
       // Subscribe to temperature characteristic notifications
       try {
         await UniversalBle.setNotifiable(
           deviceId,
-          BleConstants.serviceUuid,
-          BleConstants.tempCharacteristicUuid,
+          _activeServiceUuid,
+          _activeTempCharUuid,
           BleInputProperty.notification,
         );
         debugPrint('[BLE] Notifications enabled for temperature characteristic');
@@ -241,12 +312,12 @@ class BleService {
         _startPolling(deviceId);
       }
 
-      // Initial read
+      // Initial read of temperature
       try {
         final initialBytes = await UniversalBle.readValue(
           deviceId,
-          BleConstants.serviceUuid,
-          BleConstants.tempCharacteristicUuid,
+          _activeServiceUuid,
+          _activeTempCharUuid,
         );
         final initialTemp = parseTemperature(initialBytes);
         if (initialTemp != null) {
@@ -258,13 +329,19 @@ class BleService {
 
       _emitStatus(
         isConnected: true,
-        deviceName: name,
+        deviceName: displayName,
         deviceId: deviceId,
       );
     } catch (e) {
       debugPrint('[BLE] Connect failed: $e');
       _handleDisconnect(explicitError: 'Connection failed: $e');
     }
+  }
+
+  bool _matchesUuid(String a, String b) {
+    final cleanA = a.toLowerCase().replaceAll('-', '');
+    final cleanB = b.toLowerCase().replaceAll('-', '');
+    return cleanA == cleanB || cleanA.contains(cleanB) || cleanB.contains(cleanA);
   }
 
   void _handleDisconnect({String? explicitError}) {
@@ -295,7 +372,7 @@ class BleService {
         isConnected: false,
         isConnecting: false,
         isAutoReconnecting: false,
-        error: 'Reconnection timed out. Tap BLE Link to retry.',
+        error: 'Reconnection timed out. Tap to scan devices.',
       );
       return;
     }
@@ -307,13 +384,13 @@ class BleService {
       isConnected: false,
       isConnecting: true,
       isAutoReconnecting: true,
-      error: 'Auto-reconnecting to ${BleConstants.deviceName} (attempt $_reconnectAttempts)...',
+      error: 'Auto-reconnecting to ${_currentStatus.deviceName ?? BleConstants.deviceName} (attempt $_reconnectAttempts)...',
     );
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
       if (_targetDeviceId != null && !_userExplicitDisconnect) {
-        await _connectToDevice(_targetDeviceId!, BleConstants.deviceName);
+        await connectToDevice(_targetDeviceId!, BleConstants.deviceName);
       }
     });
   }
@@ -356,8 +433,8 @@ class BleService {
       try {
         await UniversalBle.writeValue(
           _connectedDeviceId!,
-          BleConstants.serviceUuid,
-          BleConstants.setpointCharacteristicUuid,
+          _activeServiceUuid,
+          _activeSetpointCharUuid,
           bytes,
           BleOutputProperty.withResponse,
         );
@@ -365,8 +442,8 @@ class BleService {
         debugPrint('[BLE] withResponse write failed ($writeErr), falling back to withoutResponse');
         await UniversalBle.writeValue(
           _connectedDeviceId!,
-          BleConstants.serviceUuid,
-          BleConstants.setpointCharacteristicUuid,
+          _activeServiceUuid,
+          _activeSetpointCharUuid,
           bytes,
           BleOutputProperty.withoutResponse,
         );
@@ -406,8 +483,8 @@ class BleService {
       try {
         await UniversalBle.writeValue(
           _connectedDeviceId!,
-          BleConstants.serviceUuid,
-          BleConstants.servoCharacteristicUuid,
+          _activeServiceUuid,
+          _activeServoCharUuid,
           bytes,
           BleOutputProperty.withResponse,
         );
@@ -415,8 +492,8 @@ class BleService {
         debugPrint('[BLE] withResponse write failed ($writeErr), falling back to withoutResponse');
         await UniversalBle.writeValue(
           _connectedDeviceId!,
-          BleConstants.serviceUuid,
-          BleConstants.servoCharacteristicUuid,
+          _activeServiceUuid,
+          _activeServoCharUuid,
           bytes,
           BleOutputProperty.withoutResponse,
         );

@@ -796,20 +796,6 @@ class BluetoothService {
     }
   }
 
-  /**
-   * Writes numeric servo position (e.g. angle in degrees 0-180 or step position) to UUID ...0003
-   * @param {number} position 
-   * @returns {Promise<{success: boolean, position: number, hex?: string, simulated?: boolean}>}
-   */
-  async writeServoPosition(position) {
-    const pos = Math.round(Number(position));
-    if (Number.isNaN(pos)) {
-      throw new Error(`Invalid servo position: ${position}`);
-    }
-    const res = await this.writeServo(pos.toString());
-    return { ...res, position: pos };
-  }
-
   disconnect() {
     this._userExplicitlyDisconnected = true;
     this.isAutoReconnecting = false;
