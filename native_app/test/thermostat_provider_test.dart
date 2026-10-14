@@ -46,13 +46,5 @@ void main() {
       expect(clampSetpoint(90.0), equals(85.0));
       expect(clampSetpoint(72.5), equals(72.5));
     });
-
-    test('Servo angle is strictly clamped between 0.0° and 180.0°', () {
-      double clampServo(double angle) => angle.clamp(0.0, 180.0);
-
-      expect(clampServo(-15.0), equals(0.0));
-      expect(clampServo(210.0), equals(180.0));
-      expect(clampServo(90.0), equals(90.0));
-    });
   });
 }

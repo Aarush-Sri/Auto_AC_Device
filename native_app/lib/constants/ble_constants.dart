@@ -14,7 +14,7 @@ class BleConstants {
   /// Writes target temperature as UTF-8 string (e.g. "72.0")
   static const String setpointCharacteristicUuid = '12345678-1234-1234-1234-123456789002';
 
-  /// Servo Control & Power characteristic (Write)
-  /// Writes "on", "off", or numeric angle "0" to "180" as UTF-8 string
+  /// System Power characteristic (Write)
+  /// Writes "on" or "off" as UTF-8 string
   static const String servoCharacteristicUuid = '12345678-1234-1234-1234-123456789003';
 }

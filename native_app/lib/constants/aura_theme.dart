@@ -46,14 +46,7 @@ class AuraTheme {
       ),
       fontFamily: 'Inter',
       useMaterial3: true,
-      cardTheme: CardThemeData(
-        color: cardSurface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: border, width: 1),
-        ),
-      ),
+      cardColor: cardSurface,
     );
   }
 }

@@ -70,8 +70,6 @@ class ThermostatProvider extends ChangeNotifier {
 
   String _activeZoneId = 'living-room';
   String _unit = 'F'; // 'F' or 'C'
-  double _servoPosition = 0; // 0 to 180
-  int _servoStep = 10;
   bool _autoConnect = true;
 
   BleStatus _bleStatus = const BleStatus();
@@ -87,8 +85,6 @@ class ThermostatProvider extends ChangeNotifier {
   ClimateZone get activeZone =>
       _zones.firstWhere((z) => z.id == _activeZoneId, orElse: () => _zones.first);
   String get unit => _unit;
-  double get servoPosition => _servoPosition;
-  int get servoStep => _servoStep;
   bool get autoConnect => _autoConnect;
   BleStatus get bleStatus => _bleStatus;
   List<BleLogEntry> get bleLogs => List.unmodifiable(_bleLogs);
@@ -99,7 +95,6 @@ class ThermostatProvider extends ChangeNotifier {
     // Load persisted settings
     try {
       final prefs = await SharedPreferences.getInstance();
-      _servoPosition = prefs.getDouble('aura_servo_pos') ?? 0.0;
       _autoConnect = prefs.getBool('aura_autoconnect') ?? true;
       _unit = prefs.getString('aura_unit') ?? 'F';
       final lastDeviceId = prefs.getString('aura_last_ble_device_id');
@@ -260,37 +255,6 @@ class ThermostatProvider extends ChangeNotifier {
       return c.toStringAsFixed(1);
     }
     return tempF.toStringAsFixed(tempF % 1 == 0 ? 0 : 1);
-  }
-
-  // Servo Controls
-  void setServoPosition(double angle) {
-    final clamped = angle.clamp(0.0, 180.0);
-    _servoPosition = clamped;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setDouble('aura_servo_pos', clamped);
-    });
-    _bleService.writeServo(clamped.round().toString());
-    addLog('Servo Position: ${clamped.round()}°', BleLogType.info);
-    notifyListeners();
-  }
-
-  void incrementServo([int? step]) {
-    final d = step ?? _servoStep;
-    setServoPosition(_servoPosition + d);
-  }
-
-  void decrementServo([int? step]) {
-    final d = step ?? _servoStep;
-    setServoPosition(_servoPosition - d);
-  }
-
-  void resetServo() {
-    setServoPosition(0.0);
-  }
-
-  void setServoStep(int step) {
-    _servoStep = step;
-    notifyListeners();
   }
 
   // BLE Connectivity & Scanning

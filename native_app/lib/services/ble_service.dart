@@ -283,15 +283,13 @@ class BleService {
       for (final s in services) {
         if (_matchesUuid(s.uuid, BleConstants.serviceUuid)) {
           _activeServiceUuid = s.uuid;
-          if (s.characteristics != null) {
-            for (final c in s.characteristics!) {
-              if (_matchesUuid(c.uuid, BleConstants.tempCharacteristicUuid)) {
-                _activeTempCharUuid = c.uuid;
-              } else if (_matchesUuid(c.uuid, BleConstants.setpointCharacteristicUuid)) {
-                _activeSetpointCharUuid = c.uuid;
-              } else if (_matchesUuid(c.uuid, BleConstants.servoCharacteristicUuid)) {
-                _activeServoCharUuid = c.uuid;
-              }
+          for (final c in s.characteristics) {
+            if (_matchesUuid(c.uuid, BleConstants.tempCharacteristicUuid)) {
+              _activeTempCharUuid = c.uuid;
+            } else if (_matchesUuid(c.uuid, BleConstants.setpointCharacteristicUuid)) {
+              _activeSetpointCharUuid = c.uuid;
+            } else if (_matchesUuid(c.uuid, BleConstants.servoCharacteristicUuid)) {
+              _activeServoCharUuid = c.uuid;
             }
           }
           break;

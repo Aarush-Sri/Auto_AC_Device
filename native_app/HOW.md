@@ -14,7 +14,7 @@ The app communicates directly with the ESP32 peripheral over GATT:
 | **Primary Service** | `12345678-1234-1234-1234-123456789000` | GATT Service | 128-bit UUID |
 | **Ambient Temp** | `12345678-1234-1234-1234-123456789001` | Read / Notify | IEEE-754 32-bit Float (LE) or ASCII String (`"24.5"`) |
 | **Target Setpoint** | `12345678-1234-1234-1234-123456789002` | Write | UTF-8 String (`"72.0"`) |
-| **Servo Position** | `12345678-1234-1234-1234-123456789003` | Write | UTF-8 String (`"on"`, `"off"`, `"90"`) |
+| **System Power** | `12345678-1234-1234-1234-123456789003` | Write | UTF-8 String (`"on"`, `"off"`) |
 
 ---
 
@@ -88,4 +88,4 @@ Tests verify:
 - IEEE-754 Little-Endian float32 byte parsing (`[0x00, 0x00, 0xC4, 0x41]` -> 24.5°).
 - ASCII string fallbacks (`"24.5"` -> 24.5°).
 - Write serialization queues preventing GATT operation collisions.
-- Temperature boundary limits (60°F to 85°F) and servo clamping (0° to 180°).
+- Temperature boundary limits (60°F to 85°F).
