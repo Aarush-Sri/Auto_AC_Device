@@ -59,7 +59,21 @@ const INITIAL_ZONES = [
 ];
 
 export function ThermostatProvider({ children }) {
-  const [zones, setZones] = useState(INITIAL_ZONES);
+  const [zones, setZones] = useState(() => {
+    try {
+      return INITIAL_ZONES.map(z => {
+        const storedSp = localStorage.getItem(`aura_setpoint_${z.id}`);
+        const storedPower = localStorage.getItem(`aura_power_${z.id}`);
+        return {
+          ...z,
+          setpoint: storedSp !== null ? Math.min(85, Math.max(60, parseFloat(storedSp))) : z.setpoint,
+          power: storedPower !== null ? storedPower === 'true' : z.power,
+        };
+      });
+    } catch {
+      return INITIAL_ZONES;
+    }
+  });
   const [activeZoneId, setActiveZoneId] = useState('living-room');
   const [unit, setUnit] = useState('F'); // 'F' or 'C'
   const [activeNav, setActiveNav] = useState('climate-control'); // 'climate-control' | 'multi-zone' | 'schedules' | 'energy-air' | 'device-settings'
@@ -298,6 +312,9 @@ export function ThermostatProvider({ children }) {
     setZones(prev => prev.map(z => {
       if (z.id === activeZoneId) {
         nextPower = !z.power;
+        try {
+          localStorage.setItem(`aura_power_${z.id}`, String(nextPower));
+        } catch {}
         return { ...z, power: nextPower };
       }
       return z;
@@ -331,6 +348,11 @@ export function ThermostatProvider({ children }) {
     const maxF = 85;
     const newSetpointF = Math.min(maxF, Math.max(minF, Math.round((currentF + step) * 10) / 10));
 
+    try {
+      localStorage.setItem(`aura_setpoint_${activeZoneId}`, String(newSetpointF));
+      localStorage.setItem('aura_last_setpoint', String(newSetpointF));
+    } catch {}
+
     setZones(prev => prev.map(z => {
       if (z.id === activeZoneId) {
         return { ...z, setpoint: newSetpointF };
@@ -345,6 +367,12 @@ export function ThermostatProvider({ children }) {
     if (!activeZone.power) return;
     const clamped = Math.min(85, Math.max(60, newVal));
     const rounded = Math.round(clamped * 10) / 10;
+
+    try {
+      localStorage.setItem(`aura_setpoint_${activeZoneId}`, String(rounded));
+      localStorage.setItem('aura_last_setpoint', String(rounded));
+    } catch {}
+
     setZones(prev => prev.map(z => {
       if (z.id === activeZoneId) {
         return { ...z, setpoint: rounded };

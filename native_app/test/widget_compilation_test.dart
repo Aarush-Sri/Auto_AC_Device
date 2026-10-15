@@ -7,7 +7,6 @@ import 'package:aura_climate/constants/ble_constants.dart';
 import 'package:aura_climate/providers/thermostat_provider.dart';
 import 'package:aura_climate/widgets/aura_header.dart';
 import 'package:aura_climate/widgets/circular_dial.dart';
-import 'package:aura_climate/widgets/mode_selector.dart';
 import 'package:aura_climate/widgets/ble_scanner_sheet.dart';
 
 void main() {
@@ -21,7 +20,6 @@ void main() {
     expect(find.byType(MainThermostatScreen), findsOneWidget);
     expect(find.byType(AuraHeader), findsOneWidget);
     expect(find.byType(CircularDial), findsOneWidget);
-    expect(find.byType(ModeSelector), findsOneWidget);
   });
 
   testWidgets('Mobile phone viewport (375x667 iPhone SE) renders full app without overflow', (WidgetTester tester) async {
@@ -35,7 +33,6 @@ void main() {
 
     expect(find.byType(AuraHeader), findsOneWidget);
     expect(find.byType(CircularDial), findsOneWidget);
-    expect(find.byType(ModeSelector), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -50,7 +47,6 @@ void main() {
 
     expect(find.byType(AuraHeader), findsOneWidget);
     expect(find.byType(CircularDial), findsOneWidget);
-    expect(find.byType(ModeSelector), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -65,7 +61,6 @@ void main() {
 
     expect(find.byType(AuraHeader), findsOneWidget);
     expect(find.byType(CircularDial), findsOneWidget);
-    expect(find.byType(ModeSelector), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

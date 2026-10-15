@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aura_climate/models/climate_zone.dart';
+import 'package:aura_climate/providers/thermostat_provider.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Thermostat State Logic Tests', () {
     test('ClimateZone copyWith updates target setpoint correctly', () {
       const zone = ClimateZone(
@@ -45,6 +49,18 @@ void main() {
       expect(clampSetpoint(55.0), equals(60.0));
       expect(clampSetpoint(90.0), equals(85.0));
       expect(clampSetpoint(72.5), equals(72.5));
+    });
+
+    test('ThermostatProvider loads saved setpoint from SharedPreferences on startup', () async {
+      SharedPreferences.setMockInitialValues({
+        'aura_setpoint_living-room': 76.5,
+        'aura_power_living-room': true,
+      });
+
+      final provider = ThermostatProvider();
+      // Allow async _initProvider to read mock prefs
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(provider.activeZone.setpoint, equals(76.5));
     });
   });
 }

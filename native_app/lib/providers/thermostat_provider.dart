@@ -102,6 +102,26 @@ class ThermostatProvider extends ChangeNotifier {
         _bleService.setTargetDeviceId(lastDeviceId);
       }
       _bleService.setAutoReconnectEnabled(_autoConnect);
+
+      final savedZoneId = prefs.getString('aura_active_zone_id');
+      if (savedZoneId != null && _zones.any((z) => z.id == savedZoneId)) {
+        _activeZoneId = savedZoneId;
+      }
+
+      // Restore saved setpoints and power states for zones
+      _zones = _zones.map((z) {
+        final savedSetpoint = prefs.getDouble('aura_setpoint_${z.id}') ??
+            (z.id == _activeZoneId ? prefs.getDouble('aura_last_setpoint') : null);
+        final savedPower = prefs.getBool('aura_power_${z.id}');
+        if (savedSetpoint != null || savedPower != null) {
+          return z.copyWith(
+            setpoint: savedSetpoint != null ? savedSetpoint.clamp(60.0, 85.0) : z.setpoint,
+            power: savedPower ?? z.power,
+          );
+        }
+        return z;
+      }).toList();
+      notifyListeners();
     } catch (_) {}
 
     // Listen to BLE Status
@@ -162,6 +182,9 @@ class ThermostatProvider extends ChangeNotifier {
 
   void setActiveZone(String id) {
     _activeZoneId = id;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('aura_active_zone_id', id);
+    }).catchError((_) {});
     notifyListeners();
   }
 
@@ -175,8 +198,22 @@ class ThermostatProvider extends ChangeNotifier {
     }).toList();
 
     _bleService.writeServo(nextPower ? 'on' : 'off');
+    _persistPower(_activeZoneId, nextPower);
     addLog('System Power: ${nextPower ? "ON" : "STANDBY"}', BleLogType.info);
     notifyListeners();
+  }
+
+  void _persistPower(String zoneId, bool power) {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('aura_power_$zoneId', power);
+    }).catchError((_) {});
+  }
+
+  void _persistSetpoint(String zoneId, double setpoint) {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setDouble('aura_setpoint_$zoneId', setpoint);
+      prefs.setDouble('aura_last_setpoint', setpoint);
+    }).catchError((_) {});
   }
 
   void setMode(String newMode) {
@@ -214,6 +251,7 @@ class ThermostatProvider extends ChangeNotifier {
     }).toList();
 
     _syncSetpointToBle(rounded);
+    _persistSetpoint(_activeZoneId, rounded);
     notifyListeners();
   }
 
@@ -230,6 +268,7 @@ class ThermostatProvider extends ChangeNotifier {
     }).toList();
 
     _syncSetpointToBle(rounded);
+    _persistSetpoint(_activeZoneId, rounded);
     notifyListeners();
   }
 

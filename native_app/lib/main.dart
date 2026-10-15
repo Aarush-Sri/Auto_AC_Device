@@ -5,7 +5,6 @@ import 'constants/aura_theme.dart';
 import 'providers/thermostat_provider.dart';
 import 'widgets/aura_header.dart';
 import 'widgets/circular_dial.dart';
-import 'widgets/mode_selector.dart';
 import 'widgets/settings_drawer.dart';
 
 void main() {
@@ -76,11 +75,6 @@ class _MainThermostatScreenState extends State<MainThermostatScreen> {
                     children: [
                       // Circular Dial
                       CircularDial(),
-                      SizedBox(height: 16),
-
-                      // Essential Mode Selector
-                      ModeSelector(),
-                      SizedBox(height: 16),
                     ],
                   ),
                 ),
