@@ -101,9 +101,9 @@ class _CircularDialState extends State<CircularDial> {
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Setpoint Label
+                        // Room Temp Label
                         Text(
-                          isPowerOn ? 'TARGET SETPOINT' : 'SYSTEM STANDBY',
+                          isPowerOn ? 'ACTUAL TEMP' : 'SYSTEM STANDBY',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -113,74 +113,80 @@ class _CircularDialState extends State<CircularDial> {
                         ),
                         const SizedBox(height: 4),
 
-                        // Prominent Hero Setpoint Temperature Readout
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              thermostat.formatTemperature(activeZone.setpoint),
-                              style: TextStyle(
-                                fontSize: 56,
-                                fontWeight: FontWeight.w800,
-                                color: isPowerOn ? AuraTheme.textPrimary : AuraTheme.textMuted,
-                                letterSpacing: -2.0,
-                                height: 1.0,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4, left: 2),
-                              child: Text(
-                                '°${thermostat.unit}',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: isPowerOn ? AuraTheme.primary : AuraTheme.textMuted,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Ambient Room Temperature Indicator
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AuraTheme.cardSurfaceElevated,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AuraTheme.border,
-                              width: 1,
-                            ),
-                          ),
+                        // Prominent Hero Actual Room Temperature Readout
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                LucideIcons.thermometer,
-                                size: 13,
-                                color: isPowerOn ? AuraTheme.primary : AuraTheme.textMuted,
-                              ),
-                              const SizedBox(width: 5),
                               Text(
-                                'ROOM: ',
+                                thermostat.formatTemperature(activeZone.temp),
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.8,
-                                  color: isPowerOn ? AuraTheme.textSecondary : AuraTheme.textMuted,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w800,
+                                  color: isPowerOn ? AuraTheme.textPrimary : AuraTheme.textMuted,
+                                  letterSpacing: -1.5,
+                                  height: 1.0,
                                 ),
                               ),
-                              Text(
-                                '${thermostat.formatTemperature(activeZone.temp)}°${thermostat.unit}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: isPowerOn ? AuraTheme.textPrimary : AuraTheme.textMuted,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2, left: 2),
+                                child: Text(
+                                  '°${thermostat.unit}',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isPowerOn ? AuraTheme.primary : AuraTheme.textMuted,
+                                  ),
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Target Setpoint Indicator Capsule
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AuraTheme.cardSurfaceElevated,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AuraTheme.border,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.sliders_horizontal,
+                                  size: 13,
+                                  color: isPowerOn ? AuraTheme.primary : AuraTheme.textMuted,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'SET: ',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                    color: isPowerOn ? AuraTheme.textSecondary : AuraTheme.textMuted,
+                                  ),
+                                ),
+                                Text(
+                                  '${thermostat.formatTemperature(activeZone.setpoint)}°',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isPowerOn ? AuraTheme.primary : AuraTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
