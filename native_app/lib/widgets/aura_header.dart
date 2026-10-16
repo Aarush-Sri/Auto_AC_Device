@@ -52,11 +52,22 @@ class AuraHeader extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      child: const Center(
-                        child: Icon(
-                          LucideIcons.wind,
-                          color: AuraTheme.primary,
-                          size: 18,
+                      clipBehavior: Clip.antiAlias,
+                      padding: const EdgeInsets.all(2),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Center(
+                            child: Icon(
+                              LucideIcons.wind,
+                              color: AuraTheme.primary,
+                              size: 18,
+                            ),
+                          ),
                         ),
                       ),
                     ),

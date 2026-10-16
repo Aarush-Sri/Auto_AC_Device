@@ -61,30 +61,16 @@ class _MainThermostatScreenState extends State<MainThermostatScreen> {
             },
           ),
 
-          // Main Viewport
+          // Main Viewport (Fixed & Centered, No Scrolling)
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 420),
-                          child: const CircularDial(),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: const CircularDial(),
+                ),
+              ),
             ),
           ),
         ],

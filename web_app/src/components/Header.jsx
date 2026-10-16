@@ -20,7 +20,7 @@ export default function Header({ onOpenSettings }) {
       {/* Brand: Name & Logo Only */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-surface-container-high/80 border border-primary/20 flex items-center justify-center p-1.5 shadow-inner">
-          <img alt="Aura Climate Logo" className="w-full h-full object-contain" src="/logo.svg" />
+          <img alt="Aura Climate Logo" className="w-full h-full object-contain" src="/logo.png" />
         </div>
         <span className="text-[19px] font-bold tracking-tight text-on-surface">Aura Climate</span>
       </div>
