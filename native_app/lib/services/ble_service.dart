@@ -90,6 +90,26 @@ class BleService {
         }
       }
     };
+
+    UniversalBle.onAvailabilityChange = (state) {
+      debugPrint('[BLE] Bluetooth availability changed: $state');
+      if (state == AvailabilityState.poweredOn) {
+        if (_autoReconnectEnabled && !_currentStatus.isConnected && !_currentStatus.isConnecting && !_userExplicitDisconnect) {
+          debugPrint('[BLE] Bluetooth adapter powered on - initiating auto-connect');
+          connect();
+        }
+      } else if (state == AvailabilityState.poweredOff || state == AvailabilityState.unauthorized) {
+        if (_isScanning) {
+          stopScan();
+        }
+        if (!_currentStatus.isConnected) {
+          _emitStatus(
+            isConnecting: false,
+            error: 'Bluetooth is off or not permitted.',
+          );
+        }
+      }
+    };
   }
 
   void setAutoReconnectEnabled(bool enabled) {
@@ -167,24 +187,19 @@ class BleService {
     _discoveredDevicesMap.clear();
     _scanResultsController.add([]);
 
-    var availability = await UniversalBle.getBluetoothAvailabilityState();
-    if (availability == AvailabilityState.unknown) {
-      final completer = Completer<AvailabilityState>();
-      UniversalBle.onAvailabilityChange = (state) {
-        if (!completer.isCompleted && state != AvailabilityState.unknown) {
-          completer.complete(state);
-        }
-      };
-      try {
-        availability = await completer.future.timeout(const Duration(seconds: 2));
-      } catch (_) {}
+    AvailabilityState availability;
+    try {
+      availability = await UniversalBle.getBluetoothAvailabilityState();
+    } catch (_) {
+      availability = AvailabilityState.unknown;
     }
 
     if (availability != AvailabilityState.poweredOn) {
       _isScanning = false;
       _emitStatus(
         isConnecting: false,
-        error: 'Bluetooth is off or not permitted. Check Bluetooth and Location settings.',
+        isAutoReconnecting: _autoReconnectEnabled && autoConnect,
+        error: 'Bluetooth is not ready. Waiting for adapter...',
       );
       return;
     }
@@ -222,6 +237,12 @@ class BleService {
     } catch (e) {
       _isScanning = false;
       _emitStatus(isConnecting: false, error: 'Scan error: $e');
+      if (autoConnect && _autoReconnectEnabled && !_userExplicitDisconnect) {
+        _reconnectTimer?.cancel();
+        _reconnectTimer = Timer(const Duration(seconds: 3), () {
+          if (!_currentStatus.isConnected) connect();
+        });
+      }
       return;
     }
 
@@ -230,10 +251,25 @@ class BleService {
       if (_isScanning) {
         stopScan();
         if (autoConnect && !_currentStatus.isConnected && !_currentStatus.isConnecting) {
-          _emitStatus(
-            isConnecting: false,
-            error: 'Could not find ${BleConstants.deviceName} nearby. Tap to scan devices.',
-          );
+          if (_autoReconnectEnabled && !_userExplicitDisconnect) {
+            _emitStatus(
+              isConnecting: true,
+              isAutoReconnecting: true,
+              error: 'Searching for ${BleConstants.deviceName}...',
+            );
+            // Cooldown before next scan pass to prevent mobile OS BLE scan throttling
+            _reconnectTimer?.cancel();
+            _reconnectTimer = Timer(const Duration(milliseconds: 2500), () {
+              if (_autoReconnectEnabled && !_userExplicitDisconnect && !_currentStatus.isConnected) {
+                connect();
+              }
+            });
+          } else {
+            _emitStatus(
+              isConnecting: false,
+              error: 'Could not find ${BleConstants.deviceName} nearby. Tap to scan devices.',
+            );
+          }
         }
       }
     });
@@ -249,8 +285,30 @@ class BleService {
     } catch (_) {}
   }
 
-  /// Connect using automatic scan match
+  /// Connect using automatic scan match or direct target device reconnect
   Future<void> connect() async {
+    _userExplicitDisconnect = false;
+    _reconnectTimer?.cancel();
+
+    // If we already have a saved target device, attempt direct fast connect first
+    if (_targetDeviceId != null && _targetDeviceId!.isNotEmpty && !_currentStatus.isConnected) {
+      _emitStatus(
+        isConnecting: true,
+        isAutoReconnecting: true,
+        deviceId: _targetDeviceId,
+        deviceName: BleConstants.deviceName,
+        error: 'Connecting to ${BleConstants.deviceName}...',
+      );
+      try {
+        await connectToDevice(_targetDeviceId!, BleConstants.deviceName);
+        if (_currentStatus.isConnected) {
+          return;
+        }
+      } catch (e) {
+        debugPrint('[BLE] Direct connect to $_targetDeviceId failed ($e), falling back to scan...');
+      }
+    }
+
     await startScan(autoConnect: true);
   }
 
@@ -387,8 +445,17 @@ class BleService {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
-      if (_targetDeviceId != null && !_userExplicitDisconnect) {
-        await connectToDevice(_targetDeviceId!, BleConstants.deviceName);
+      if (_userExplicitDisconnect) return;
+      if (_targetDeviceId != null) {
+        try {
+          await connectToDevice(_targetDeviceId!, BleConstants.deviceName);
+        } catch (_) {
+          if (!_currentStatus.isConnected && !_userExplicitDisconnect) {
+            await connect();
+          }
+        }
+      } else {
+        await connect();
       }
     });
   }

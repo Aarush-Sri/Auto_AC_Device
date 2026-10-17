@@ -159,7 +159,7 @@ class ThermostatProvider extends ChangeNotifier {
     });
 
     if (_autoConnect) {
-      Future.delayed(const Duration(milliseconds: 600), () {
+      Future.delayed(const Duration(milliseconds: 300), () {
         connectBle();
       });
     }
@@ -303,7 +303,11 @@ class ThermostatProvider extends ChangeNotifier {
 
   Future<void> connectBle() async {
     addLog('Initiating BLE Scan for ${BleService.instance.currentStatus.deviceName ?? "903-AC-V2"}...', BleLogType.info);
-    await _bleService.connect();
+    try {
+      await _bleService.connect();
+    } catch (e) {
+      debugPrint('[BLE] Connect failed: $e');
+    }
   }
 
   Future<void> startBleScan() async {

@@ -24,10 +24,7 @@ export default function ClimateControlView() {
       {/* Hero Header */}
       <div className="w-full max-w-md flex items-center justify-between mb-2 z-10">
         <div className="flex flex-col">
-          <span className="text-xs font-bold text-primary tracking-widest uppercase font-mono">
-            {subtitle}
-          </span>
-          <h1 className="text-2xl font-bold text-on-surface tracking-tight">{name}</h1>
+          <h1 className="text-2xl font-bold text-on-surface tracking-tight">Smart Thermostat</h1>
         </div>
         <div className="flex items-center gap-2">
           <span

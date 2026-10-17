@@ -43,8 +43,32 @@ class MainThermostatScreen extends StatefulWidget {
   State<MainThermostatScreen> createState() => _MainThermostatScreenState();
 }
 
-class _MainThermostatScreenState extends State<MainThermostatScreen> {
+class _MainThermostatScreenState extends State<MainThermostatScreen> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    final thermostat = context.read<ThermostatProvider>();
+    if (state == AppLifecycleState.resumed) {
+      // Re-trigger auto-connect immediately whenever user switches back to the app
+      if (thermostat.autoConnect && !thermostat.bleStatus.isConnected && !thermostat.bleStatus.isConnecting) {
+        thermostat.connectBle();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

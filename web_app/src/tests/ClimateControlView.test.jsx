@@ -12,8 +12,7 @@ describe('ClimateControlView Component', () => {
       </ThermostatProvider>
     );
 
-    expect(screen.getByText('Living Room')).toBeInTheDocument();
-    expect(screen.getByText('Penthouse Suite')).toBeInTheDocument();
+    expect(screen.getByText('Smart Thermostat')).toBeInTheDocument();
     expect(screen.getByText('Target Temperature')).toBeInTheDocument();
     expect(screen.getByText('Current Temp')).toBeInTheDocument();
     expect(screen.queryByText('Humidity')).not.toBeInTheDocument();
