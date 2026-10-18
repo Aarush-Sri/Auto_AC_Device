@@ -433,7 +433,12 @@ class BluetoothService {
 
   async connect() {
     if (!this.isSupported()) {
-      const err = 'Web Bluetooth is not supported in Safari or Firefox. Please use Chrome/Edge on Desktop or Android, or the Bluefy BLE browser on iPhone/iPad.';
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      let err = 'Web Bluetooth is not supported in Safari or Firefox. Please use Chrome/Edge on Desktop or Android, or the Bluefy BLE browser on iPhone/iPad.';
+      if (!isHttps && !isLocalhost) {
+        err = 'Web Bluetooth on Android requires HTTPS or localhost. If opening over local Wi-Fi IP, enable chrome://flags/#unsafely-treat-insecure-origin-as-secure in Chrome.';
+      }
       this._notifyStatus({ connected: false, connecting: false, error: err });
       throw new Error(err);
     }

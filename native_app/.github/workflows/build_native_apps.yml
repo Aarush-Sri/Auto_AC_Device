@@ -1,4 +1,4 @@
-name: Build Native Apps (iOS, Android, Windows)
+name: Build Native Apps (iOS, Android)
 
 on:
   push:
@@ -146,58 +146,4 @@ jobs:
           path: ${{ steps.flutter_project.outputs.path }}/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
 
-  # =============================================================
-  # 3. Windows Desktop Build (Windows-latest Runner)
-  # =============================================================
-  build-windows:
-    name: Build Windows Desktop
-    runs-on: windows-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
 
-      - name: Locate Flutter Project
-        id: flutter_project
-        shell: bash
-        run: |
-          if [ -f "Dashboard/native_app/pubspec.yaml" ]; then
-            echo "path=Dashboard/native_app" >> $GITHUB_OUTPUT
-          elif [ -f "dashboard/native_app/pubspec.yaml" ]; then
-            echo "path=dashboard/native_app" >> $GITHUB_OUTPUT
-          elif [ -f "native_app/pubspec.yaml" ]; then
-            echo "path=native_app" >> $GITHUB_OUTPUT
-          elif [ -f "pubspec.yaml" ]; then
-            echo "path=." >> $GITHUB_OUTPUT
-          else
-            echo "::error::Could not find pubspec.yaml"
-            exit 1
-          fi
-
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Enable Windows Desktop
-        working-directory: ${{ steps.flutter_project.outputs.path }}
-        run: flutter config --enable-windows-desktop
-
-      - name: Install Dependencies
-        working-directory: ${{ steps.flutter_project.outputs.path }}
-        run: flutter pub get
-
-      - name: Run Dart Unit Tests
-        working-directory: ${{ steps.flutter_project.outputs.path }}
-        run: flutter test
-
-      - name: Build Windows Desktop Release
-        working-directory: ${{ steps.flutter_project.outputs.path }}
-        run: flutter build windows --release
-
-      - name: Upload Windows Executable Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AuraClimate-Windows-Release
-          path: ${{ steps.flutter_project.outputs.path }}/build/windows/x64/runner/Release/
-          retention-days: 14

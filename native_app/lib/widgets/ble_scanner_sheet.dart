@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_ble/universal_ble.dart';
 import '../constants/aura_theme.dart';
@@ -284,6 +285,37 @@ class _BleScannerSheetState extends State<BleScannerSheet> {
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 12, color: AuraTheme.textMuted),
                             ),
+                            if (bleStatus.error != null) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AuraTheme.error.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AuraTheme.error.withOpacity(0.3)),
+                                ),
+                                child: Text(
+                                  bleStatus.error!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 12, color: AuraTheme.error),
+                                ),
+                              ),
+                              if (bleStatus.error!.contains('Settings')) ...[
+                                const SizedBox(height: 10),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AuraTheme.primary,
+                                    side: const BorderSide(color: AuraTheme.primary),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  icon: const Icon(LucideIcons.settings, size: 16),
+                                  label: const Text('Open App Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  onPressed: () {
+                                    openAppSettings();
+                                  },
+                                ),
+                              ],
+                            ],
                             const SizedBox(height: 16),
                             if (!isScanning)
                               ElevatedButton.icon(

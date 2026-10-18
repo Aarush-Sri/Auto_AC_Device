@@ -1,15 +1,25 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Android 12+ (API 31+) Bluetooth Low Energy Permissions -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation" />
+    <!-- Removed 'neverForLocation' flag to ensure Android does not filter out ESP32 BLE advertisements -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        tools:remove="android:usesPermissionFlags" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 
-    <!-- Bluetooth and Location Permissions for Android BLE Peripheral Discovery -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- Bluetooth and Location Permissions for Android BLE Discovery (Android <= 11 & GPS requirement) -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"
+        android:maxSdkVersion="30" />
 
     <!-- BLE Hardware Feature Requirement -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>

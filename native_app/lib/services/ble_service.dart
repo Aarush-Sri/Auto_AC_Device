@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_ble/universal_ble.dart';
 import '../constants/ble_constants.dart';
 
@@ -98,14 +100,24 @@ class BleService {
           debugPrint('[BLE] Bluetooth adapter powered on - initiating auto-connect');
           connect();
         }
-      } else if (state == AvailabilityState.poweredOff || state == AvailabilityState.unauthorized) {
+      } else if (state == AvailabilityState.poweredOff) {
         if (_isScanning) {
           stopScan();
         }
         if (!_currentStatus.isConnected) {
           _emitStatus(
             isConnecting: false,
-            error: 'Bluetooth is off or not permitted.',
+            error: 'Bluetooth is turned off. Please turn it on in Settings.',
+          );
+        }
+      } else if (state == AvailabilityState.unauthorized) {
+        if (_isScanning) {
+          stopScan();
+        }
+        if (!_currentStatus.isConnected) {
+          _emitStatus(
+            isConnecting: false,
+            error: 'Bluetooth permission denied. Tap to grant permissions.',
           );
         }
       }
@@ -175,6 +187,60 @@ class BleService {
     return null;
   }
 
+  /// Checks and requests necessary Bluetooth and Location runtime permissions on Android.
+  Future<bool> checkAndRequestPermissions() async {
+    if (kIsWeb) return true;
+    if (!Platform.isAndroid) return true;
+
+    try {
+      debugPrint('[BLE] Checking and requesting Android runtime permissions...');
+      final statuses = await [
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.location,
+      ].request();
+
+      final scanStatus = statuses[Permission.bluetoothScan] ?? PermissionStatus.granted;
+      final connectStatus = statuses[Permission.bluetoothConnect] ?? PermissionStatus.granted;
+      final locationStatus = statuses[Permission.location] ?? PermissionStatus.granted;
+
+      debugPrint('[BLE] Permission results: scan=$scanStatus, connect=$connectStatus, location=$locationStatus');
+
+      if (scanStatus.isPermanentlyDenied || connectStatus.isPermanentlyDenied) {
+        _emitStatus(
+          isConnecting: false,
+          error: 'Bluetooth permissions permanently denied. Please enable in Android Settings.',
+        );
+        return false;
+      }
+
+      if (scanStatus.isDenied || connectStatus.isDenied) {
+        _emitStatus(
+          isConnecting: false,
+          error: 'Bluetooth permissions required to discover and connect to ESP32.',
+        );
+        return false;
+      }
+
+      // Check if system location services (GPS) are enabled
+      try {
+        final isLocationOn = await Permission.location.serviceStatus.isEnabled;
+        if (!isLocationOn) {
+          debugPrint('[BLE] Warning: Android system Location (GPS) is turned OFF.');
+          _emitStatus(
+            isConnecting: false,
+            error: 'Please turn ON Location (GPS) in phone settings to find BLE devices.',
+          );
+        }
+      } catch (_) {}
+
+      return true;
+    } catch (e) {
+      debugPrint('[BLE] Error requesting Android permissions: $e');
+      return true;
+    }
+  }
+
   /// Initiates scanning with live discovered device streaming.
   /// If [autoConnect] is true, will auto-connect upon finding a matching peripheral.
   Future<void> startScan({
@@ -187,14 +253,40 @@ class BleService {
     _discoveredDevicesMap.clear();
     _scanResultsController.add([]);
 
+    // 1. Ensure Android runtime permissions are requested and granted
+    final hasPermissions = await checkAndRequestPermissions();
+    if (!hasPermissions) {
+      _isScanning = false;
+      return;
+    }
+
+    // 2. Check Bluetooth availability with brief settlement delay if unknown
     AvailabilityState availability;
     try {
       availability = await UniversalBle.getBluetoothAvailabilityState();
+      if (availability == AvailabilityState.unknown) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        availability = await UniversalBle.getBluetoothAvailabilityState();
+      }
     } catch (_) {
       availability = AvailabilityState.unknown;
     }
 
-    if (availability != AvailabilityState.poweredOn) {
+    if (availability == AvailabilityState.poweredOff) {
+      _isScanning = false;
+      _emitStatus(
+        isConnecting: false,
+        error: 'Bluetooth is turned off. Please turn on Bluetooth.',
+      );
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          await UniversalBle.enableBluetooth();
+        } catch (_) {}
+      }
+      return;
+    }
+
+    if (availability != AvailabilityState.poweredOn && availability != AvailabilityState.unknown) {
       _isScanning = false;
       _emitStatus(
         isConnecting: false,
@@ -223,6 +315,7 @@ class BleService {
             name.contains('903-AC') ||
             name.contains('903') ||
             name.contains('ESP32') ||
+            name.contains('AURA') ||
             (result.deviceId == _targetDeviceId && _targetDeviceId != null);
 
         if (isMatch) {
@@ -290,6 +383,12 @@ class BleService {
     _userExplicitDisconnect = false;
     _reconnectTimer?.cancel();
 
+    // Ensure permissions before connecting
+    final hasPermissions = await checkAndRequestPermissions();
+    if (!hasPermissions) {
+      return;
+    }
+
     // If we already have a saved target device, attempt direct fast connect first
     if (_targetDeviceId != null && _targetDeviceId!.isNotEmpty && !_currentStatus.isConnected) {
       _emitStatus(
@@ -315,6 +414,9 @@ class BleService {
   /// Connects directly to a specific BLE device by ID (MAC or UUID).
   Future<void> connectToDevice(String deviceId, [String? name]) async {
     await stopScan();
+    final hasPermissions = await checkAndRequestPermissions();
+    if (!hasPermissions) return;
+
     _targetDeviceId = deviceId;
     final displayName = name ?? BleConstants.deviceName;
 

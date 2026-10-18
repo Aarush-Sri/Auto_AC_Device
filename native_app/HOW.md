@@ -57,6 +57,26 @@ Because Apple requires every iOS app to be cryptographically signed, follow this
 
 ---
 
+## 🤖 Android Installation & Bluetooth Permissions Guide
+
+Android has strict requirements for Bluetooth Low Energy (BLE) scanning:
+
+### Step 1: Install APK
+- In GitHub, go to **Actions → Build Native Apps (iOS, Android)** and download the **`AuraClimate-Android-APK`** artifact (or build locally with `flutter build apk --release`).
+- Install `app-release.apk` on your phone.
+
+### Step 2: Grant Runtime Permissions
+When launched, Aura Climate will prompt you for permissions:
+1. **Nearby Devices (`BLUETOOTH_SCAN` & `BLUETOOTH_CONNECT`)**: Tap **"Allow"** (Android 12+ / API 31+).
+2. **Location (`ACCESS_FINE_LOCATION`)**: Tap **"While using the app"** (Required on Android for BLE peripheral discovery).
+
+### Step 3: Turn ON Location (GPS) in Quick Settings
+> [!IMPORTANT]
+> On almost all Android phones (Samsung, Xiaomi, Pixel, Motorola), the Android OS Bluetooth stack **will not deliver BLE scan results if the global Location (GPS) toggle in your notification shade is turned OFF**.
+> Ensure **Location is ON** in your phone's quick settings tray!
+
+---
+
 ## 💻 Local Windows & Android Development
 
 To develop and test on your Windows computer or an Android phone:
