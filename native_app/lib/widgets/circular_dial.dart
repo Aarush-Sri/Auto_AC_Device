@@ -22,6 +22,10 @@ class _CircularDialState extends State<CircularDial> {
   static const double minTempF = 60.0;
   static const double maxTempF = 85.0;
 
+  // Temp boundaries in C
+  static const double minTempC = 16.0;
+  static const double maxTempC = 30.0;
+
   void _handlePanUpdate(Offset localPos, Size size, ThermostatProvider thermostat) {
     if (!thermostat.activeZone.power) return;
 
@@ -38,11 +42,22 @@ class _CircularDialState extends State<CircularDial> {
 
     if (normalized <= sweepAngle) {
       final ratio = (normalized / sweepAngle).clamp(0.0, 1.0);
-      final newTemp = minTempF + ratio * (maxTempF - minTempF);
-      final rounded = (newTemp * 10).roundToDouble() / 10;
-      if (rounded != thermostat.activeZone.setpoint) {
+      final double targetSetpointF;
+      if (thermostat.unit == 'C') {
+        final newTempC = minTempC + ratio * (maxTempC - minTempC);
+        // Dial only goes in +-0.5 increments
+        final roundedC = (newTempC * 2).roundToDouble() / 2;
+        targetSetpointF = (roundedC * 9 / 5) + 32;
+      } else {
+        final newTempF = minTempF + ratio * (maxTempF - minTempF);
+        // Dial only goes in +-0.5 increments
+        final roundedF = (newTempF * 2).roundToDouble() / 2;
+        targetSetpointF = roundedF;
+      }
+
+      if ((targetSetpointF - thermostat.activeZone.setpoint).abs() > 0.05) {
         HapticFeedback.selectionClick();
-        thermostat.setSetpoint(rounded);
+        thermostat.setSetpoint(targetSetpointF);
       }
     }
   }
@@ -94,6 +109,7 @@ class _CircularDialState extends State<CircularDial> {
                         setpointF: activeZone.setpoint,
                         currentTempF: activeZone.temp,
                         isPowerOn: isPowerOn,
+                        unit: thermostat.unit,
                       ),
                     ),
 
@@ -270,11 +286,13 @@ class _DialPainter extends CustomPainter {
   final double setpointF;
   final double currentTempF;
   final bool isPowerOn;
+  final String unit;
 
   _DialPainter({
     required this.setpointF,
     required this.currentTempF,
     required this.isPowerOn,
+    this.unit = 'F',
   });
 
   @override
@@ -303,7 +321,13 @@ class _DialPainter extends CustomPainter {
     if (!isPowerOn) return;
 
     // 2. Active Setpoint Progress Arc
-    final setpointRatio = ((setpointF - 60.0) / (85.0 - 60.0)).clamp(0.0, 1.0);
+    final double setpointRatio;
+    if (unit == 'C') {
+      final setpointC = ((setpointF - 32) * 5) / 9;
+      setpointRatio = ((setpointC - 16.0) / (30.0 - 16.0)).clamp(0.0, 1.0);
+    } else {
+      setpointRatio = ((setpointF - 60.0) / (85.0 - 60.0)).clamp(0.0, 1.0);
+    }
     final activeSweep = sweepAngle * setpointRatio;
 
     final activePaint = Paint()
@@ -348,6 +372,7 @@ class _DialPainter extends CustomPainter {
   bool shouldRepaint(covariant _DialPainter oldDelegate) {
     return oldDelegate.setpointF != setpointF ||
         oldDelegate.currentTempF != currentTempF ||
-        oldDelegate.isPowerOn != isPowerOn;
+        oldDelegate.isPowerOn != isPowerOn ||
+        oldDelegate.unit != unit;
   }
 }

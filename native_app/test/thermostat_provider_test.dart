@@ -62,5 +62,58 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
       expect(provider.activeZone.setpoint, equals(76.5));
     });
+
+    test('ThermostatProvider adjustSetpoint and setSetpoint strictly step in +-0.5 increments', () async {
+      SharedPreferences.setMockInitialValues({
+        'aura_setpoint_living-room': 70.0,
+        'aura_power_living-room': true,
+        'aura_unit': 'F',
+      });
+
+      final provider = ThermostatProvider();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(provider.activeZone.setpoint, equals(70.0));
+
+      // Adjust +0.5
+      provider.adjustSetpoint(0.5);
+      expect(provider.activeZone.setpoint, equals(70.5));
+
+      // Adjust -0.5
+      provider.adjustSetpoint(-0.5);
+      expect(provider.activeZone.setpoint, equals(70.0));
+
+      // Setting arbitrary decimal value snaps to nearest 0.5
+      provider.setSetpoint(71.23);
+      expect(provider.activeZone.setpoint, equals(71.0));
+
+      provider.setSetpoint(71.4);
+      expect(provider.activeZone.setpoint, equals(71.5));
+
+      provider.setSetpoint(71.8);
+      expect(provider.activeZone.setpoint, equals(72.0));
+    });
+
+    test('ThermostatProvider in Celsius mode strictly steps in +-0.5°C increments', () async {
+      SharedPreferences.setMockInitialValues({
+        'aura_setpoint_living-room': 69.8, // 21.0°C
+        'aura_power_living-room': true,
+        'aura_unit': 'C',
+      });
+
+      final provider = ThermostatProvider();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // In Celsius: 69.8°F is 21.0°C
+      expect(provider.formatTemperature(provider.activeZone.setpoint), equals('21'));
+
+      // Adjust +0.5°C -> 21.5°C
+      provider.adjustSetpoint(0.5);
+      expect(provider.formatTemperature(provider.activeZone.setpoint), equals('21.5'));
+
+      // Adjust -0.5°C -> 21.0°C
+      provider.adjustSetpoint(-0.5);
+      expect(provider.formatTemperature(provider.activeZone.setpoint), equals('21'));
+    });
   });
 }

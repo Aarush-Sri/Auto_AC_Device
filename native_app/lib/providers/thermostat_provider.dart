@@ -114,13 +114,24 @@ class ThermostatProvider extends ChangeNotifier {
             (z.id == _activeZoneId ? prefs.getDouble('aura_last_setpoint') : null);
         final savedPower = prefs.getBool('aura_power_${z.id}');
         if (savedSetpoint != null || savedPower != null) {
+          final clampedSetpoint = savedSetpoint != null
+              ? (savedSetpoint.clamp(60.0, 85.0) * 2).roundToDouble() / 2
+              : z.setpoint;
           return z.copyWith(
-            setpoint: savedSetpoint != null ? savedSetpoint.clamp(60.0, 85.0) : z.setpoint,
+            setpoint: clampedSetpoint,
             power: savedPower ?? z.power,
           );
         }
         return z;
       }).toList();
+
+      if (_unit == 'C') {
+        _zones = _zones.map((z) {
+          final c = (((z.setpoint - 32) * 5) / 9 * 2).roundToDouble() / 2;
+          final clampedC = c.clamp(16.0, 30.0);
+          return z.copyWith(setpoint: (clampedC * 9 / 5) + 32);
+        }).toList();
+      }
       notifyListeners();
     } catch (_) {}
 
@@ -239,49 +250,74 @@ class ThermostatProvider extends ChangeNotifier {
 
   void adjustSetpoint(double delta) {
     if (!activeZone.power) return;
-    final step = _unit == 'C' ? delta * 1.8 : delta;
-    final newF = (activeZone.setpoint + step).clamp(60.0, 85.0);
-    final rounded = (newF * 10).roundToDouble() / 10;
+    final double roundedF;
+    if (_unit == 'C') {
+      final currentC = (((activeZone.setpoint - 32) * 5) / 9 * 2).roundToDouble() / 2;
+      final newC = (currentC + delta).clamp(16.0, 30.0);
+      final snappedC = (newC * 2).roundToDouble() / 2;
+      roundedF = (snappedC * 9 / 5) + 32;
+    } else {
+      final currentF = (activeZone.setpoint * 2).roundToDouble() / 2;
+      final newF = (currentF + delta).clamp(60.0, 85.0);
+      roundedF = (newF * 2).roundToDouble() / 2;
+    }
 
     _zones = _zones.map((z) {
       if (z.id == _activeZoneId) {
-        return z.copyWith(setpoint: rounded);
+        return z.copyWith(setpoint: roundedF);
       }
       return z;
     }).toList();
 
-    _syncSetpointToBle(rounded);
-    _persistSetpoint(_activeZoneId, rounded);
+    _syncSetpointToBle(roundedF);
+    _persistSetpoint(_activeZoneId, roundedF);
     notifyListeners();
   }
 
   void setSetpoint(double newF) {
     if (!activeZone.power) return;
-    final clamped = newF.clamp(60.0, 85.0);
-    final rounded = (clamped * 10).roundToDouble() / 10;
+    final double roundedF;
+    if (_unit == 'C') {
+      final inC = (((newF - 32) * 5) / 9 * 2).roundToDouble() / 2;
+      final clampedC = inC.clamp(16.0, 30.0);
+      roundedF = (clampedC * 9 / 5) + 32;
+    } else {
+      final clampedF = newF.clamp(60.0, 85.0);
+      roundedF = (clampedF * 2).roundToDouble() / 2;
+    }
 
     _zones = _zones.map((z) {
       if (z.id == _activeZoneId) {
-        return z.copyWith(setpoint: rounded);
+        return z.copyWith(setpoint: roundedF);
       }
       return z;
     }).toList();
 
-    _syncSetpointToBle(rounded);
-    _persistSetpoint(_activeZoneId, rounded);
+    _syncSetpointToBle(roundedF);
+    _persistSetpoint(_activeZoneId, roundedF);
     notifyListeners();
   }
 
   void _syncSetpointToBle(double targetF) {
     final valToSend = _unit == 'C'
-        ? (((targetF - 32) * 5) / 9 * 10).roundToDouble() / 10
-        : targetF;
+        ? (((targetF - 32) * 5) / 9 * 2).roundToDouble() / 2
+        : (targetF * 2).roundToDouble() / 2;
     _bleService.writeSetpoint(valToSend);
     addLog('Transmitted Setpoint: $valToSend°$_unit', BleLogType.success);
   }
 
   void toggleUnit() {
     _unit = _unit == 'F' ? 'C' : 'F';
+    _zones = _zones.map((z) {
+      if (_unit == 'C') {
+        final c = (((z.setpoint - 32) * 5) / 9 * 2).roundToDouble() / 2;
+        final clampedC = c.clamp(16.0, 30.0);
+        return z.copyWith(setpoint: (clampedC * 9 / 5) + 32);
+      } else {
+        final f = (z.setpoint * 2).roundToDouble() / 2;
+        return z.copyWith(setpoint: f.clamp(60.0, 85.0));
+      }
+    }).toList();
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString('aura_unit', _unit);
     });
@@ -291,9 +327,11 @@ class ThermostatProvider extends ChangeNotifier {
   String formatTemperature(double tempF) {
     if (_unit == 'C') {
       final c = ((tempF - 32) * 5) / 9;
-      return c.toStringAsFixed(1);
+      final roundedC = (c * 10).roundToDouble() / 10;
+      return roundedC % 1 == 0 ? roundedC.toInt().toString() : roundedC.toStringAsFixed(1);
     }
-    return tempF.toStringAsFixed(tempF % 1 == 0 ? 0 : 1);
+    final roundedF = (tempF * 10).roundToDouble() / 10;
+    return roundedF % 1 == 0 ? roundedF.toInt().toString() : roundedF.toStringAsFixed(1);
   }
 
   // BLE Connectivity & Scanning
